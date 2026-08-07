@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <p class="lede">
+    Here's what the camp still needs. Pick anything you can bring and let us
+    know how much — everyone can see what's already covered.
+  </p>
+
+  {% if not board %}
+    <p class="empty">Nothing has been listed yet. Please check back soon.</p>
+  {% endif %}
+
+  {% for category in board %}
+    <section class="category">
+      <h2 class="category__name">{{ category.name }}</h2>
+
+      {% for item in category.entries %}
+        {% set is_done = item.remaining <= 0 %}
+        <article class="item{% if is_done %} item--done{% endif %}" id="item-{{ item.id }}">
+          <div class="item__head">
+            <h3 class="item__name">{{ item.name }}</h3>
+            {% if is_done %}<span class="badge">Fully claimed</span>{% endif %}
+          </div>
+
+          {% if item.description %}
+            <p class="item__desc">{{ item.description }}</p>
+          {% endif %}
+
+          {% set percent = [(item.claimed / item.quantity_needed * 100) | round | int, 100] | min %}
+          <div class="progress" role="img"
+               aria-label="{{ percent }} percent claimed">
+            <div class="progress__bar" style="width: {{ percent }}%"></div>
+          </div>
+          <p class="progress__label">
+            <strong>{{ item.claimed }}</strong> / {{ item.quantity_needed }} {{ item.unit }} claimed
+            {% if not is_done %}<span class="muted">· {{ item.remaining }} still needed</span>{% endif %}
+          </p>
+
+          {% if item.claims %}
+            <ul class="claims">
+              {% for claim in item.claims %}
+                <li class="claims__row">
+                  <span class="claims__who">{{ claim.claimant_name }}</span>
+                  <span class="claims__qty">{{ claim.quantity }} {{ item.unit }}</span>
+                  {% if claim.note %}<span class="claims__note">{{ claim.note }}</span>{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          {% if not is_done %}
+            <details class="claim" {% if open_item_id == item.id %}open{% endif %}>
+              <summary class="claim__toggle">Claim this</summary>
+
+              {% if open_item_id == item.id and claim_error %}
+                <p class="flash flash--error">{{ claim_error }}</p>
+              {% endif %}
+
+              <form class="claim__form" method="post"
+                    action="{{ url_for('public.claim', item_id=item.id) }}">
+                <label>
+                  Your name
+                  <input type="text" name="claimant_name" maxlength="80" required
+                         value="{{ form.claimant_name if open_item_id == item.id else '' }}">
+                </label>
+                <label>
+                  Phone number
+                  <input type="tel" name="phone_number" maxlength="25" required
+                         inputmode="tel" placeholder="e.g. +961 70 123 456"
+                         value="{{ form.phone_number if open_item_id == item.id else '' }}">
+                </label>
+                <label>
+                  How many {{ item.unit }}? <span class="muted">(max {{ item.remaining }})</span>
+                  <input type="number" name="quantity" min="1" max="{{ item.remaining }}"
+                         step="1" required inputmode="numeric"
+                         value="{{ form.quantity if open_item_id == item.id else '' }}">
+                </label>
+                <label>
+                  Note <span class="muted">(optional)</span>
+                  <textarea name="note" rows="2" maxlength="300"
+                            placeholder="e.g. I can drop these off on Friday">{{ form.note if open_item_id == item.id else '' }}</textarea>
+                </label>
+                <button type="submit" class="btn btn--primary">Confirm claim</button>
+              </form>
+            </details>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </section>
+  {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='claim.js') }}" defer></script>
+{% endblock %}

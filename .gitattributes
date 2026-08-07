@@ -1,0 +1,3 @@
+# The server is Linux; keep everything LF in the repo so the systemd unit and
+# Caddyfile stay valid no matter which machine committed them.
+* text=auto eol=lf

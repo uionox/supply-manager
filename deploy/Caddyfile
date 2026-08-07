@@ -1,0 +1,16 @@
+# Replace supplies.example.org with the real domain, and make sure its DNS
+# A record points at this server before reloading Caddy — that's all the
+# HTTPS certificate needs.
+
+supplies.example.org {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8000
+
+	# Static files change rarely and are versioned by deploy, not by name.
+	@static path /static/*
+	header @static Cache-Control "public, max-age=3600"
+
+	log {
+		output file /var/log/caddy/supply-manager.log
+	}
+}

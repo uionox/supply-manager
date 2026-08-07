@@ -1,0 +1,56 @@
+{% extends "admin/_layout.html" %}
+{% block title %}{{ 'Edit item' if item else 'New item' }} · {{ config.SITE_TITLE }}{% endblock %}
+
+{% block admin_content %}
+  <h1 class="page__title">{{ 'Edit item' if item else 'New item' }}</h1>
+
+  <div class="panel">
+    <form class="stack" method="post"
+          action="{{ url_for('admin.update_item', item_id=item.id) if item else url_for('admin.create_item') }}">
+      <label>
+        Category
+        <select name="category_id" required>
+          {% for category in categories %}
+            <option value="{{ category.id }}"
+                    {{ 'selected' if category.id == selected_category }}>{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>
+        Name
+        <input type="text" name="name" required maxlength="100"
+               value="{{ item.name if item else '' }}">
+      </label>
+
+      <label>
+        Description <span class="muted">(optional)</span>
+        <textarea name="description" rows="3" maxlength="400">{{ item.description if item else '' }}</textarea>
+      </label>
+
+      <div class="field-pair">
+        <label>
+          Quantity needed
+          <input type="number" name="quantity_needed" min="1" step="1" required
+                 value="{{ item.quantity_needed if item else '' }}">
+        </label>
+        <label>
+          Unit
+          <input type="text" name="unit" maxlength="20" placeholder="pcs"
+                 value="{{ item.unit if item else 'pcs' }}">
+        </label>
+      </div>
+
+      <div class="form__actions">
+        <button type="submit" class="btn btn--primary">{{ 'Save changes' if item else 'Create item' }}</button>
+        <a class="btn btn--quiet" href="{{ url_for('admin.items') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  {% if item %}
+    <p class="muted">
+      <a href="{{ url_for('admin.item_claims', item_id=item.id) }}">View claims for this item →</a>
+    </p>
+  {% endif %}
+{% endblock %}

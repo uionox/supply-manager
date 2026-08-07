@@ -1,0 +1,51 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Dashboard · {{ config.SITE_TITLE }}{% endblock %}
+
+{% block admin_content %}
+  <h1 class="page__title">Dashboard</h1>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="stat__value">{{ stats.percent }}%</span>
+      <span class="stat__label">fulfilled overall</span>
+    </div>
+    <div class="stat">
+      <span class="stat__value">{{ stats.total_items }}</span>
+      <span class="stat__label">items in {{ stats.total_categories }} categories</span>
+    </div>
+    <div class="stat">
+      <span class="stat__value">{{ stats.fully_claimed }}</span>
+      <span class="stat__label">fully claimed</span>
+    </div>
+    <div class="stat">
+      <span class="stat__value">{{ stats.total_claims }}</span>
+      <span class="stat__label">claims recorded</span>
+    </div>
+  </div>
+
+  <h2 class="section__title">Still needed most</h2>
+  {% if outstanding %}
+    <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr><th>Item</th><th>Category</th><th class="num">Remaining</th><th class="num">Progress</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for item in outstanding %}
+          <tr>
+            <td>{{ item.name }}</td>
+            <td class="muted">{{ item.category_name }}</td>
+            <td class="num">{{ item.remaining }} {{ item.unit }}</td>
+            <td class="num">{{ item.percent }}%</td>
+            <td class="num"><a href="{{ url_for('admin.item_claims', item_id=item.id) }}">Claims</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <p class="empty">
+      {% if stats.total_items %}Everything is fully claimed.{% else %}No items yet.{% endif %}
+    </p>
+  {% endif %}
+{% endblock %}

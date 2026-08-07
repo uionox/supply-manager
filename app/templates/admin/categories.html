@@ -1,0 +1,40 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Categories · {{ config.SITE_TITLE }}{% endblock %}
+
+{% block admin_content %}
+  <h1 class="page__title">Categories</h1>
+
+  <form class="inline-form" method="post" action="{{ url_for('admin.create_category') }}">
+    <input type="text" name="name" placeholder="New category name" required maxlength="60">
+    <button type="submit" class="btn btn--primary">Add</button>
+  </form>
+
+  {% if categories %}
+    <ul class="rows">
+      {% for category in categories %}
+        <li class="row">
+          <form class="row__main" method="post"
+                action="{{ url_for('admin.update_category', cat_id=category.id) }}">
+            <input type="text" name="name" value="{{ category.name }}" required maxlength="60">
+            <button type="submit" class="btn btn--quiet">Save</button>
+          </form>
+          <span class="muted row__meta">{{ category.item_count }} item(s)</span>
+          <div class="row__actions">
+            <form method="post" action="{{ url_for('admin.move_category', cat_id=category.id) }}">
+              <button class="btn btn--icon" name="direction" value="up"
+                      title="Move up" {{ 'disabled' if loop.first }}>↑</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.move_category', cat_id=category.id) }}">
+              <button class="btn btn--icon" name="direction" value="down"
+                      title="Move down" {{ 'disabled' if loop.last }}>↓</button>
+            </form>
+            <a class="btn btn--danger"
+               href="{{ url_for('admin.delete_category', cat_id=category.id) }}">Delete</a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">No categories yet. Add one above to get started.</p>
+  {% endif %}
+{% endblock %}

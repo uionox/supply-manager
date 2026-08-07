@@ -1,0 +1,28 @@
+[Unit]
+Description=Camp Supply Tracker (Gunicorn)
+After=network.target
+
+[Service]
+Type=notify
+User=supply
+Group=supply
+WorkingDirectory=/srv/supply-manager
+EnvironmentFile=/srv/supply-manager/.env
+ExecStart=/srv/supply-manager/.venv/bin/gunicorn \
+    --workers 2 \
+    --bind 127.0.0.1:8000 \
+    --access-logfile - \
+    --error-logfile - \
+    wsgi:app
+Restart=on-failure
+RestartSec=3
+
+# The app only ever needs to write its own instance/ directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/supply-manager/instance
+
+[Install]
+WantedBy=multi-user.target

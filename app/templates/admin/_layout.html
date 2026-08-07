@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block masthead_extra %}
+  <form class="masthead__logout" method="post" action="{{ url_for('auth.logout') }}">
+    <button type="submit" class="btn btn--quiet">Sign out</button>
+  </form>
+{% endblock %}
+
+{% block content %}
+  {% set here = request.endpoint or '' %}
+  <nav class="adminnav">
+    <a href="{{ url_for('admin.dashboard') }}"
+       class="{{ 'is-active' if here == 'admin.dashboard' }}">Dashboard</a>
+    <a href="{{ url_for('admin.items') }}"
+       class="{{ 'is-active' if 'item' in here or 'claim' in here }}">Items</a>
+    <a href="{{ url_for('admin.categories') }}"
+       class="{{ 'is-active' if 'categor' in here }}">Categories</a>
+    <a href="{{ url_for('admin.export_xlsx') }}">Export Excel</a>
+    <a href="{{ url_for('public.index') }}">View public page</a>
+  </nav>
+
+  {% block admin_content %}{% endblock %}
+{% endblock %}
+
+{% block footer %}{% endblock %}

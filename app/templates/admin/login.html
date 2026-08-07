@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Admin sign in · {{ config.SITE_TITLE }}{% endblock %}
+
+{% block content %}
+  <div class="panel panel--narrow">
+    <h1 class="panel__title">Admin sign in</h1>
+    <form method="post" class="stack">
+      <label>
+        Password
+        <input type="password" name="password" required autofocus
+               autocomplete="current-password">
+      </label>
+      <button type="submit" class="btn btn--primary">Sign in</button>
+    </form>
+  </div>
+{% endblock %}
+
+{% block footer %}
+  <a href="{{ url_for('public.index') }}">Back to the public page</a>
+{% endblock %}

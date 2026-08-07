@@ -1,0 +1,18 @@
+# Live data lives here — never commit it, and never let `git pull` touch it.
+instance/
+
+# Local secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editors / OS / local tooling
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

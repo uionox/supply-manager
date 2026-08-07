@@ -1,0 +1,18 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Confirm delete · {{ config.SITE_TITLE }}{% endblock %}
+
+{% block admin_content %}
+  <div class="panel panel--narrow">
+    <h1 class="panel__title">{{ title }}</h1>
+    <ul class="warning-list">
+      {% for line in lines %}<li>{{ line }}</li>{% endfor %}
+    </ul>
+    <p class="muted">This can't be undone.</p>
+    <div class="form__actions">
+      <form method="post" action="{{ action }}">
+        <button type="submit" class="btn btn--danger">Yes, delete</button>
+      </form>
+      <a class="btn btn--quiet" href="{{ cancel }}">Cancel</a>
+    </div>
+  </div>
+{% endblock %}

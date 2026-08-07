@@ -1,0 +1,44 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Claims: {{ item.name }} · {{ config.SITE_TITLE }}{% endblock %}
+
+{% block admin_content %}
+  <p class="crumb"><a href="{{ url_for('admin.items') }}">← All items</a></p>
+  <h1 class="page__title">{{ item.name }}</h1>
+  <p class="muted">
+    {{ item.category_name }} ·
+    {{ item.claimed }} / {{ item.quantity_needed }} {{ item.unit }} claimed ·
+    {{ item.remaining }} remaining
+  </p>
+
+  {% if claims %}
+    <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Claimant</th><th>Phone</th><th class="num">Quantity</th>
+          <th>Note</th><th>When</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for claim in claims %}
+          <tr>
+            <td>{{ claim.claimant_name }}</td>
+            <td><a href="tel:{{ claim.phone_number | replace(' ', '') }}">{{ claim.phone_number }}</a></td>
+            <td class="num">{{ claim.quantity }} {{ item.unit }}</td>
+            <td class="muted">{{ claim.note or '—' }}</td>
+            <td class="muted nowrap">{{ claim.created_at }}</td>
+            <td class="num">
+              <form method="post" action="{{ url_for('admin.delete_claim', claim_id=claim.id) }}"
+                    onsubmit="return confirm('Cancel {{ claim.claimant_name }}’s claim of {{ claim.quantity }} {{ item.unit }}?');">
+                <button type="submit" class="btn btn--danger">Cancel</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  {% else %}
+    <p class="empty">Nobody has claimed this item yet.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Items · {{ config.SITE_TITLE }}{% endblock %}
+
+{% block admin_content %}
+  <div class="page__head">
+    <h1 class="page__title">Items</h1>
+    {% if has_categories %}
+      <a class="btn btn--primary" href="{{ url_for('admin.new_item') }}">Add item</a>
+    {% endif %}
+  </div>
+
+  {% if not has_categories %}
+    <p class="empty">
+      Create a <a href="{{ url_for('admin.categories') }}">category</a> first —
+      every item belongs to one.
+    </p>
+  {% endif %}
+
+  {% for category, rows in grouped %}
+    <section class="category">
+      <h2 class="category__name">{{ category.name }}</h2>
+
+      {% if rows %}
+        <ul class="rows">
+          {% for item in rows %}
+            <li class="row row--item">
+              <div class="row__main">
+                <a class="row__title" href="{{ url_for('admin.edit_item', item_id=item.id) }}">{{ item.name }}</a>
+                <span class="muted row__meta">
+                  {{ item.claimed }} / {{ item.quantity_needed }} {{ item.unit }}
+                  · {{ item.percent }}%
+                  · <a href="{{ url_for('admin.item_claims', item_id=item.id) }}">{{ item.claim_count }} claim(s)</a>
+                </span>
+              </div>
+              <div class="row__actions">
+                <form method="post" action="{{ url_for('admin.move_item', item_id=item.id) }}">
+                  <button class="btn btn--icon" name="direction" value="up"
+                          title="Move up" {{ 'disabled' if loop.first }}>↑</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.move_item', item_id=item.id) }}">
+                  <button class="btn btn--icon" name="direction" value="down"
+                          title="Move down" {{ 'disabled' if loop.last }}>↓</button>
+                </form>
+                <a class="btn btn--quiet" href="{{ url_for('admin.edit_item', item_id=item.id) }}">Edit</a>
+                <a class="btn btn--danger" href="{{ url_for('admin.delete_item', item_id=item.id) }}">Delete</a>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">
+          No items here yet.
+          <a href="{{ url_for('admin.new_item', category_id=category.id) }}">Add one</a>.
+        </p>
+      {% endif %}
+    </section>
+  {% endfor %}
+{% endblock %}
