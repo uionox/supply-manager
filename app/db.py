@@ -54,10 +54,23 @@ def write_transaction():
     conn.execute("COMMIT")
 
 
+# Columns added after the first release. CREATE TABLE IF NOT EXISTS won't
+# touch a table that already exists, so they're added here instead.
+ADDED_COLUMNS = [
+    ("claims", "general_note", "ALTER TABLE claims ADD COLUMN general_note TEXT"),
+]
+
+
 def ensure_schema():
-    """Create any missing tables. Idempotent, safe to call on every boot."""
+    """Create missing tables and columns. Safe to call on every boot."""
+    db = get_db()
     with open(SCHEMA_PATH, encoding="utf-8") as fh:
-        get_db().executescript(fh.read())
+        db.executescript(fh.read())
+
+    for table, column, statement in ADDED_COLUMNS:
+        existing = {row["name"] for row in db.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            db.execute(statement)
 
 
 def init_app(app):

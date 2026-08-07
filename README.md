@@ -68,15 +68,27 @@ nav bar under 768px.
 Claiming is two steps, so somebody bringing eight things types their details
 once rather than eight times:
 
-1. **Build a list.** Each item takes a quantity and goes onto the visitor's
-   list. This is held in their signed session cookie — nothing is written to
-   the database yet, and no name or phone number is asked for.
+1. **Build a list.** Each item takes a quantity and an optional note about
+   that item ("all size L"). The list is held in the visitor's signed session
+   cookie — nothing is written to the database yet, and no name or phone
+   number is asked for.
 2. **Review & confirm.** One screen shows the whole list with editable
-   amounts, then asks for name, phone, and an optional note once. Every claim
-   is written in a single transaction.
+   amounts and notes, then asks for name, phone, and an optional note about
+   the whole drop-off ("dropping everything off Friday"). Every claim is
+   written in a single transaction.
+
+So there are two note levels: `claims.note` belongs to one item, and
+`claims.general_note` describes the drop-off and is repeated across the
+claims confirmed together. The public page shows the item note, falling back
+to the drop-off note when an item has none, so a claim always shows something
+useful. Admins see both, and the Excel export gives them separate columns.
 
 Name and phone are remembered in the session afterwards, so a return visit
 arrives pre-filled.
+
+The list lives in a cookie, so its size is checked on every change
+(`SESSION_LIST_BUDGET` in [app/public.py](app/public.py)) — browsers drop
+cookies over about 4KB, and per-item notes make the payload variable.
 
 ## Notes
 

@@ -7,6 +7,7 @@ someone bringing eight things types their details once instead of eight
 times.
 """
 
+import json
 import re
 
 from flask import (
@@ -25,8 +26,14 @@ bp = Blueprint("public", __name__)
 
 PHONE_ALLOWED = re.compile(r"^[0-9+()\-\s]{7,25}$")
 MAX_NAME_LEN = 80
-MAX_NOTE_LEN = 300
-MAX_LIST_ITEMS = 40
+MAX_ITEM_NOTE_LEN = 140
+MAX_GENERAL_NOTE_LEN = 300
+MAX_LIST_ITEMS = 30
+
+# The list lives in the signed session cookie, and browsers drop cookies over
+# ~4KB. Per-item notes make the payload variable, so measure it rather than
+# trusting the item count alone.
+SESSION_LIST_BUDGET = 2800
 
 PENDING_KEY = "pending"
 CONTACT_KEY = "contact"
@@ -47,23 +54,33 @@ REMAINING_SQL = """
 
 
 def get_pending():
-    """[(item_id, quantity)] from the session, ignoring anything malformed."""
-    pairs = []
-    for entry in session.get(PENDING_KEY) or []:
+    """The list from the session, ignoring anything malformed."""
+    entries = []
+    for raw in session.get(PENDING_KEY) or []:
         try:
-            item_id, quantity = int(entry[0]), int(entry[1])
+            item_id, quantity = int(raw[0]), int(raw[1])
         except (TypeError, ValueError, IndexError):
             continue
+        note = raw[2] if len(raw) > 2 and isinstance(raw[2], str) else ""
         if quantity > 0:
-            pairs.append((item_id, quantity))
-    return pairs
+            entries.append({"id": item_id, "quantity": quantity, "note": note})
+    return entries
 
 
-def save_pending(pairs):
-    if pairs:
-        session[PENDING_KEY] = [[item_id, qty] for item_id, qty in pairs]
+def _packed(entries):
+    return [[e["id"], e["quantity"], e["note"]] for e in entries]
+
+
+def save_pending(entries):
+    if entries:
+        session[PENDING_KEY] = _packed(entries)
     else:
         session.pop(PENDING_KEY, None)
+
+
+def fits_in_session(entries):
+    packed = json.dumps(_packed(entries), separators=(",", ":"))
+    return len(packed.encode("utf-8")) <= SESSION_LIST_BUDGET
 
 
 def pending_details():
@@ -72,11 +89,11 @@ def pending_details():
     Items an admin deleted in the meantime are dropped from the session here,
     so the confirm page never shows a row that can't be claimed.
     """
-    pairs = get_pending()
-    if not pairs:
+    entries = get_pending()
+    if not entries:
         return []
 
-    placeholders = ",".join("?" * len(pairs))
+    placeholders = ",".join("?" * len(entries))
     rows = {
         row["id"]: row
         for row in get_db().execute(
@@ -89,28 +106,27 @@ def pending_details():
             WHERE i.id IN ({placeholders})
             GROUP BY i.id
             """,
-            [item_id for item_id, _ in pairs],
+            [entry["id"] for entry in entries],
         ).fetchall()
     }
 
     details, kept = [], []
-    for item_id, quantity in pairs:
-        row = rows.get(item_id)
+    for entry in entries:
+        row = rows.get(entry["id"])
         if row is None:
             continue
-        kept.append((item_id, quantity))
+        kept.append(entry)
         details.append(
             {
-                "id": item_id,
+                **entry,
                 "name": row["name"],
                 "unit": row["unit"],
                 "category_name": row["category_name"],
-                "quantity": quantity,
                 "remaining": row["quantity_needed"] - row["claimed"],
             }
         )
 
-    if kept != pairs:
+    if kept != entries:
         save_pending(kept)
     return details
 
@@ -143,7 +159,7 @@ def load_board():
         """
     ).fetchall()
     claims = db.execute(
-        """SELECT item_id, claimant_name, quantity, note
+        """SELECT item_id, claimant_name, quantity, note, general_note
            FROM claims ORDER BY created_at, id"""
     ).fetchall()
 
@@ -193,7 +209,7 @@ def index():
         "index.html",
         board=board,
         summary=board_summary(board),
-        pending_map=dict(get_pending()),
+        pending_map={entry["id"]: entry for entry in get_pending()},
     )
 
 
@@ -211,18 +227,20 @@ def _back(item_id=None):
 
 @bp.post("/list/<int:item_id>")
 def list_set(item_id):
-    """Add an item to the visitor's list, change the amount, or drop it."""
+    """Add an item to the visitor's list, change it, or drop it."""
     item = get_db().execute(REMAINING_SQL, (item_id,)).fetchone()
+    entries = get_pending()
+
     if item is None:
         flash("That item is no longer listed.", "error")
-        save_pending([(i, q) for i, q in get_pending() if i != item_id])
+        save_pending([e for e in entries if e["id"] != item_id])
         return redirect(url_for("public.index"))
 
-    others = [(i, q) for i, q in get_pending() if i != item_id]
     raw = request.form.get("quantity", "").strip()
+    note = request.form.get("note", "").strip()[:MAX_ITEM_NOTE_LEN]
 
     if request.form.get("remove") or raw in ("", "0"):
-        save_pending(others)
+        save_pending([e for e in entries if e["id"] != item_id])
         flash(f"Removed {item['name']} from your list.", "success")
         return _back()
 
@@ -233,7 +251,7 @@ def list_set(item_id):
     quantity = int(raw)
     if item["remaining"] <= 0:
         flash(f"{item['name']} has just been fully claimed.", "error")
-        save_pending(others)
+        save_pending([e for e in entries if e["id"] != item_id])
         return _back()
     if quantity > item["remaining"]:
         flash(
@@ -242,12 +260,30 @@ def list_set(item_id):
             "error",
         )
         return _back(item_id)
-    if len(others) >= MAX_LIST_ITEMS:
-        flash("Your list is full — please confirm what's on it first.", "error")
+
+    existing = next((e for e in entries if e["id"] == item_id), None)
+    if existing:
+        # Update in place so editing a note doesn't reshuffle the list.
+        existing["quantity"] = quantity
+        existing["note"] = note
+        message = f"{item['name']} updated."
+    else:
+        if len(entries) >= MAX_LIST_ITEMS:
+            flash("Your list is full — please confirm what's on it first.", "error")
+            return _back(item_id)
+        entries.append({"id": item_id, "quantity": quantity, "note": note})
+        message = f"{item['name']} added to your list."
+
+    if not fits_in_session(entries):
+        flash(
+            "That's more than your list can hold — please confirm what's on it "
+            "first, or shorten a note.",
+            "error",
+        )
         return _back(item_id)
 
-    save_pending(others + [(item_id, quantity)])
-    flash(f"{item['name']} added to your list.", "success")
+    save_pending(entries)
+    flash(message, "success")
     return _back(item_id)
 
 
@@ -272,8 +308,8 @@ def _validate_contact(form):
     digits = sum(ch.isdigit() for ch in form["phone_number"])
     if not PHONE_ALLOWED.match(form["phone_number"]) or digits < 7:
         return "Please enter a phone number we can reach you on."
-    if len(form["note"]) > MAX_NOTE_LEN:
-        return f"Please keep the note under {MAX_NOTE_LEN} characters."
+    if len(form["general_note"]) > MAX_GENERAL_NOTE_LEN:
+        return f"Please keep the note under {MAX_GENERAL_NOTE_LEN} characters."
     return None
 
 
@@ -291,7 +327,7 @@ def confirm():
         form={
             "claimant_name": remembered.get("name", ""),
             "phone_number": remembered.get("phone", ""),
-            "note": "",
+            "general_note": "",
         },
         error=None,
     )
@@ -307,7 +343,7 @@ def submit_confirm():
     form = {
         "claimant_name": request.form.get("claimant_name", "").strip(),
         "phone_number": request.form.get("phone_number", "").strip(),
-        "note": request.form.get("note", "").strip(),
+        "general_note": request.form.get("general_note", "").strip(),
     }
 
     error = _validate_contact(form)
@@ -327,14 +363,15 @@ def submit_confirm():
                 continue
             db.execute(
                 """INSERT INTO claims
-                   (item_id, claimant_name, phone_number, quantity, note)
-                   VALUES (?, ?, ?, ?, ?)""",
+                   (item_id, claimant_name, phone_number, quantity, note, general_note)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
                 (
                     entry["id"],
                     form["claimant_name"],
                     form["phone_number"],
                     entry["quantity"],
-                    form["note"] or None,
+                    entry["note"] or None,
+                    form["general_note"] or None,
                 ),
             )
             placed.append(entry)
@@ -346,7 +383,13 @@ def submit_confirm():
     }
     # Anything that no longer fits stays on the list so it can be adjusted —
     # unless nothing is left at all, in which case keeping it is pointless.
-    save_pending([(e["id"], e["quantity"]) for e in short if e["remaining"] > 0])
+    save_pending(
+        [
+            {"id": e["id"], "quantity": e["quantity"], "note": e["note"]}
+            for e in short
+            if e["remaining"] > 0
+        ]
+    )
 
     if placed:
         flash(

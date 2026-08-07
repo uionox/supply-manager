@@ -25,31 +25,38 @@
 
     {% for entry in details %}
       {% set too_many = entry.quantity > entry.remaining %}
-      <div class="row-item">
-        <div class="row-info">
+      <div class="list-row">
+        <div class="row-info mb-2">
           <div class="row-name">{{ entry.name }}</div>
           <div class="row-meta">
             {{ entry.category_name }} ·
             {{ entry.remaining }} {{ entry.unit }} still needed
           </div>
           {% if too_many %}
-            <div class="text-xs mb-1" style="color: var(--danger);">
+            <div class="text-xs mt-1" style="color: var(--danger);">
               Only {{ entry.remaining }} left — lower this to confirm.
             </div>
           {% endif %}
         </div>
 
-        <form class="qty-row" method="post"
-              action="{{ url_for('public.list_set', item_id=entry.id) }}">
+        <form method="post" action="{{ url_for('public.list_set', item_id=entry.id) }}">
           <input type="hidden" name="from" value="confirm">
-          <label class="sr-only" for="q-{{ entry.id }}">Quantity of {{ entry.name }}</label>
-          <input class="form-control qty-input {{ 'is-bad' if too_many }}" id="q-{{ entry.id }}"
-                 type="number" name="quantity" min="1" max="{{ entry.remaining }}"
-                 step="1" required inputmode="numeric" value="{{ entry.quantity }}">
-          <span class="text-xs text-muted">{{ entry.unit }}</span>
-          <button type="submit" class="btn btn-ghost btn-sm">Update</button>
-          <button type="submit" name="remove" value="1" class="btn btn-danger btn-icon"
-                  title="Remove {{ entry.name }}">{{ icon('trash') }}</button>
+          <div class="qty-row">
+            <label class="sr-only" for="q-{{ entry.id }}">Quantity of {{ entry.name }}</label>
+            <input class="form-control qty-input {{ 'is-bad' if too_many }}" id="q-{{ entry.id }}"
+                   type="number" name="quantity" min="1" max="{{ entry.remaining }}"
+                   step="1" required inputmode="numeric" value="{{ entry.quantity }}">
+            <span class="text-xs text-muted">{{ entry.unit }}</span>
+
+            <label class="sr-only" for="n-{{ entry.id }}">Note about {{ entry.name }}</label>
+            <input class="form-control note-input" id="n-{{ entry.id }}" type="text"
+                   name="note" maxlength="140" value="{{ entry.note }}"
+                   placeholder="Note about this item (optional)">
+
+            <button type="submit" class="btn btn-ghost btn-sm">Update</button>
+            <button type="submit" name="remove" value="1" class="btn btn-danger btn-icon"
+                    title="Remove {{ entry.name }}">{{ icon('trash') }}</button>
+          </div>
         </form>
       </div>
     {% endfor %}
@@ -84,10 +91,16 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="note">Note <span class="text-muted">(optional)</span></label>
-          <textarea class="form-control" id="note" name="note" rows="2" maxlength="300"
-                    placeholder="e.g. I can drop these off on Friday">{{ form.note }}</textarea>
-          <div class="form-hint">Added to every item on your list.</div>
+          <label class="form-label" for="general_note">
+            Note about the whole drop-off <span class="text-muted">(optional)</span>
+          </label>
+          <textarea class="form-control" id="general_note" name="general_note" rows="2"
+                    maxlength="300"
+                    placeholder="e.g. I can drop everything off on Friday morning">{{ form.general_note }}</textarea>
+          <div class="form-hint">
+            For anything that applies to all of it. Per-item notes go next to each
+            item above.
+          </div>
         </div>
 
         <button type="submit" class="btn btn-primary w-full confirm-submit">

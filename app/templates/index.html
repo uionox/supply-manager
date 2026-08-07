@@ -77,8 +77,11 @@
                   <div class="claimer">
                     <span class="claimer-name">{{ claim.claimant_name }}</span>
                     <span class="claimer-qty">{{ claim.quantity }} {{ item.unit }}</span>
-                    {% if claim.note %}
-                      <span class="claimer-note">{{ claim.note }}</span>
+                    {# Fall back to the drop-off note so a claim with only a
+                       general note still shows something useful here. #}
+                    {% set shown_note = claim.note or claim.general_note %}
+                    {% if shown_note %}
+                      <span class="claimer-note">{{ shown_note }}</span>
                     {% endif %}
                   </div>
                 {% endfor %}
@@ -90,7 +93,7 @@
               <details class="claim"{{ ' open' if on_list }}>
                 <summary>
                   {% if on_list %}
-                    {{ icon('check') }} On your list: {{ on_list }} {{ item.unit }}
+                    {{ icon('check') }} On your list: {{ on_list.quantity }} {{ item.unit }}
                   {% else %}
                     {{ icon('plus') }} Claim
                   {% endif %}
@@ -99,18 +102,29 @@
                 <div class="claim-body">
                   <form class="claim-form" method="post"
                         action="{{ url_for('public.list_set', item_id=item.id) }}">
-                    <label class="form-label" for="qty-{{ item.id }}">Quantity</label>
-                    <div class="qty-row">
-                      <input class="form-control" id="qty-{{ item.id }}" type="number"
+                    <div class="form-group">
+                      <label class="form-label" for="qty-{{ item.id }}">Quantity</label>
+                      <input class="form-control qty-input" id="qty-{{ item.id }}" type="number"
                              name="quantity" min="1" max="{{ item.remaining }}" step="1"
-                             required inputmode="numeric" value="{{ on_list or '' }}"
-                             placeholder="0">
-                      <button type="submit" class="btn btn-primary">
-                        {{ icon('check') }} {{ 'Update' if on_list else 'Add' }}
-                      </button>
+                             required inputmode="numeric"
+                             value="{{ on_list.quantity if on_list else '' }}" placeholder="0">
+                      <div class="form-hint">{{ item.remaining }} {{ item.unit }} still needed.</div>
                     </div>
-                    <div class="form-hint">
-                      {{ item.remaining }} {{ item.unit }} still needed.
+
+                    <div class="form-group">
+                      <label class="form-label" for="note-{{ item.id }}">
+                        Note about this item <span class="text-muted">(optional)</span>
+                      </label>
+                      <input class="form-control" id="note-{{ item.id }}" type="text"
+                             name="note" maxlength="140"
+                             value="{{ on_list.note if on_list else '' }}"
+                             placeholder="e.g. all size L">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full">
+                      {{ icon('check') }} {{ 'Update' if on_list else 'Add to my list' }}
+                    </button>
+                    <div class="form-hint mt-3">
                       You'll enter your name and phone once, at the end.
                     </div>
                   </form>

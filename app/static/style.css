@@ -332,11 +332,15 @@ textarea.form-control { resize: vertical; min-height: 70px; }
 .claim-body .form-control { background: var(--surface); }
 .claim[open] > summary .badge { display: none; }
 
-/* Quantity + button on one line */
+/* Quantity, note and buttons on one line where there's room */
 .qty-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.qty-row .form-control { flex: 1; min-width: 84px; }
-.qty-input { max-width: 110px; }
+.qty-input { flex: 0 0 auto; width: 84px; }
 .qty-input.is-bad { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(220, 38, 38, .1); }
+.note-input { flex: 1 1 170px; min-width: 0; }
+
+/* One editable row on the confirm page */
+.list-row { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.list-row:last-child { border-bottom: none; }
 
 /* ── "READY TO CONFIRM" BAR ── */
 .pendbar {

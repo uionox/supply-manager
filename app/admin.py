@@ -404,7 +404,8 @@ def item_claims(item_id):
     if not item:
         abort(404)
     claims = get_db().execute(
-        """SELECT id, claimant_name, phone_number, quantity, note, created_at
+        """SELECT id, claimant_name, phone_number, quantity, note, general_note,
+                  created_at
            FROM claims WHERE item_id = ? ORDER BY created_at, id""",
         (item_id,),
     ).fetchall()
@@ -446,7 +447,7 @@ def export_xlsx():
     items = _decorate(_items_with_totals())
     claims = get_db().execute(
         """SELECT cl.claimant_name, cl.phone_number, cl.quantity, cl.note,
-                  cl.created_at, i.id AS item_id
+                  cl.general_note, cl.created_at, i.id AS item_id
            FROM claims cl JOIN items i ON i.id = cl.item_id
            ORDER BY cl.created_at, cl.id"""
     ).fetchall()
@@ -460,9 +461,10 @@ def export_xlsx():
         sheet,
         [
             "Category", "Item", "Unit", "Quantity needed", "Quantity remaining",
-            "Claimant", "Phone", "Quantity claimed", "Note", "Claimed at",
+            "Claimant", "Phone", "Quantity claimed", "Item note",
+            "Drop-off note", "Claimed at",
         ],
-        [22, 28, 10, 16, 18, 22, 18, 17, 40, 20],
+        [22, 28, 10, 16, 18, 22, 18, 17, 34, 34, 20],
     )
     for claim in claims:
         item = by_id.get(claim["item_id"], {})
@@ -477,6 +479,7 @@ def export_xlsx():
                 claim["phone_number"],
                 claim["quantity"],
                 claim["note"] or "",
+                claim["general_note"] or "",
                 claim["created_at"],
             ]
         )

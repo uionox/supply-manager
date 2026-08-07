@@ -50,7 +50,7 @@
           <thead>
             <tr>
               <th>Claimant</th><th>Phone</th><th class="num">Quantity</th>
-              <th>Note</th><th>When</th><th></th>
+              <th>Notes</th><th>When</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -64,7 +64,19 @@
                   </a>
                 </td>
                 <td class="num mono">{{ claim.quantity }} <span class="text-muted text-xs">{{ item.unit }}</span></td>
-                <td class="text-muted text-sm">{{ claim.note or '—' }}</td>
+                <td class="text-sm">
+                  {% if claim.note %}
+                    <div class="text-2">{{ claim.note }}</div>
+                  {% endif %}
+                  {% if claim.general_note %}
+                    <div class="text-xs text-muted">
+                      <span class="fw-600">Drop-off:</span> {{ claim.general_note }}
+                    </div>
+                  {% endif %}
+                  {% if not claim.note and not claim.general_note %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
                 <td class="text-muted text-xs nowrap">{{ claim.created_at }}</td>
                 <td class="num">
                   <form method="post" action="{{ url_for('admin.delete_claim', claim_id=claim.id) }}"
