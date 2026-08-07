@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% from "partials/_icons.html" import icon %}
 
+{% block body_class %}{{ 'has-pendbar' if pending_count }}{% endblock %}
+
 {% block body %}
 <header class="site-top">
   <div class="container site-top-in">
@@ -26,4 +28,6 @@
   <span>Thank you for helping out.</span>
   <a href="{{ url_for('admin.dashboard') }}">Organiser sign in</a>
 </footer>
+
+{% include "partials/_pendingbar.html" %}
 {% endblock %}

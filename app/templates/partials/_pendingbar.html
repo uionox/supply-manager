@@ -1,0 +1,14 @@
+{% from "partials/_icons.html" import icon %}
+{% if pending_count and request.endpoint != 'public.confirm' %}
+  <div class="pendbar">
+    <div class="container pendbar-in">
+      <div class="pendbar-info">
+        <span class="pendbar-count">{{ pending_count }}</span>
+        <span>item{{ 's' if pending_count != 1 }} on your list</span>
+      </div>
+      <a class="btn btn-primary" href="{{ url_for('public.confirm') }}">
+        Review &amp; confirm {{ icon('external') }}
+      </a>
+    </div>
+  </div>
+{% endif %}

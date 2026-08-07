@@ -86,55 +86,43 @@
             {% endif %}
 
             {% if not is_full %}
-              {% set is_open = open_item_id == item.id %}
-              <details class="claim"{{ ' open' if is_open }}>
-                <summary>{{ icon('plus') }} Claim</summary>
+              {% set on_list = pending_map.get(item.id) %}
+              <details class="claim"{{ ' open' if on_list }}>
+                <summary>
+                  {% if on_list %}
+                    {{ icon('check') }} On your list: {{ on_list }} {{ item.unit }}
+                  {% else %}
+                    {{ icon('plus') }} Claim
+                  {% endif %}
+                </summary>
 
                 <div class="claim-body">
-                  {% if is_open and claim_error %}
-                    <div class="flash flash-error mb-3">
-                      <span>&#9888;</span><span class="flex-1">{{ claim_error }}</span>
-                    </div>
-                  {% endif %}
-
                   <form class="claim-form" method="post"
-                        action="{{ url_for('public.claim', item_id=item.id) }}">
-                    <div class="form-group">
-                      <label class="form-label" for="name-{{ item.id }}">Your name</label>
-                      <input class="form-control" id="name-{{ item.id }}" type="text"
-                             name="claimant_name" maxlength="80" required
-                             value="{{ form.claimant_name if is_open else '' }}">
-                    </div>
-
-                    <div class="form-group">
-                      <label class="form-label" for="phone-{{ item.id }}">Phone number</label>
-                      <input class="form-control" id="phone-{{ item.id }}" type="tel"
-                             name="phone_number" maxlength="25" required inputmode="tel"
-                             placeholder="e.g. +961 70 123 456"
-                             value="{{ form.phone_number if is_open else '' }}">
-                      <div class="form-hint">So the organisers can reach you. Not shown publicly.</div>
-                    </div>
-
-                    <div class="form-group">
-                      <label class="form-label" for="qty-{{ item.id }}">Quantity</label>
+                        action="{{ url_for('public.list_set', item_id=item.id) }}">
+                    <label class="form-label" for="qty-{{ item.id }}">Quantity</label>
+                    <div class="qty-row">
                       <input class="form-control" id="qty-{{ item.id }}" type="number"
                              name="quantity" min="1" max="{{ item.remaining }}" step="1"
-                             required inputmode="numeric"
-                             value="{{ form.quantity if is_open else '' }}">
-                      <div class="form-hint">{{ item.remaining }} {{ item.unit }} still needed.</div>
+                             required inputmode="numeric" value="{{ on_list or '' }}"
+                             placeholder="0">
+                      <button type="submit" class="btn btn-primary">
+                        {{ icon('check') }} {{ 'Update' if on_list else 'Add' }}
+                      </button>
                     </div>
-
-                    <div class="form-group">
-                      <label class="form-label" for="note-{{ item.id }}">Note <span class="text-muted">(optional)</span></label>
-                      <textarea class="form-control" id="note-{{ item.id }}" name="note"
-                                rows="2" maxlength="300"
-                                placeholder="e.g. I can drop these off on Friday">{{ form.note if is_open else '' }}</textarea>
+                    <div class="form-hint">
+                      {{ item.remaining }} {{ item.unit }} still needed.
+                      You'll enter your name and phone once, at the end.
                     </div>
-
-                    <button type="submit" class="btn btn-primary w-full">
-                      {{ icon('check') }} Confirm
-                    </button>
                   </form>
+
+                  {% if on_list %}
+                    <form method="post" class="mt-3"
+                          action="{{ url_for('public.list_set', item_id=item.id) }}">
+                      <button type="submit" name="remove" value="1" class="btn btn-ghost btn-sm">
+                        {{ icon('trash') }} Remove from list
+                      </button>
+                    </form>
+                  {% endif %}
                 </div>
               </details>
             {% endif %}

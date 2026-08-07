@@ -63,11 +63,28 @@ The public page is a single centred column built for phones. The admin side
 is the familiar sidebar shell, which collapses to a drawer plus a bottom
 nav bar under 768px.
 
+## How claiming works
+
+Claiming is two steps, so somebody bringing eight things types their details
+once rather than eight times:
+
+1. **Build a list.** Each item takes a quantity and goes onto the visitor's
+   list. This is held in their signed session cookie — nothing is written to
+   the database yet, and no name or phone number is asked for.
+2. **Review & confirm.** One screen shows the whole list with editable
+   amounts, then asks for name, phone, and an optional note once. Every claim
+   is written in a single transaction.
+
+Name and phone are remembered in the session afterwards, so a return visit
+arrives pre-filled.
+
 ## Notes
 
-- **Claims can't oversubscribe an item.** Each submission re-reads the
-  remaining quantity inside a `BEGIN IMMEDIATE` transaction, so two people
-  racing for the last units can't both win.
+- **Claims can't oversubscribe an item.** Every amount is re-read inside a
+  `BEGIN IMMEDIATE` transaction at confirm time, so two people racing for the
+  last units can't both win. Because a list can sit unconfirmed for a while,
+  the confirm step reports per item: what was recorded, and what no longer
+  fits (with the real number left, so it can be adjusted and retried).
 - **The database file is gitignored** (`instance/`), so deploying with
   `git pull` never touches live data.
 - **Every page works without JavaScript.** The claim form is a `<details>`
