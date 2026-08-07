@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "partials/_icons.html" import icon %}
+
+{% block body %}
+<header class="site-top">
+  <div class="container site-top-in">
+    <a class="brand" href="{{ url_for('public.index') }}">
+      <span class="brand-mark">{{ icon('box') }}</span>
+      <span class="brand-lines">
+        <span class="brand-text">{{ config.SITE_TITLE }}</span>
+        <span class="brand-sub">Community supply list</span>
+      </span>
+    </a>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.dashboard') }}">
+      {{ icon('lock') }} Admin
+    </a>
+  </div>
+</header>
+
+<main class="container site-main">
+  {% include "partials/_flashes.html" %}
+  {% block main %}{% endblock %}
+</main>
+
+<footer class="container site-foot">
+  <span>Thank you for helping out.</span>
+  <a href="{{ url_for('admin.dashboard') }}">Organiser sign in</a>
+</footer>
+{% endblock %}

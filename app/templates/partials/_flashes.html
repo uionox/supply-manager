@@ -1,0 +1,14 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="alerts-wrap">
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">
+          <span>{% if category == 'success' %}&#10003;{% else %}&#9888;{% endif %}</span>
+          <span class="flex-1">{{ message }}</span>
+          <button type="button" class="flash-close" aria-label="Dismiss"
+                  onclick="dismissFlash(this.closest('.flash'))">&times;</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

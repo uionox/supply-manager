@@ -1,51 +1,98 @@
 {% extends "admin/_layout.html" %}
+{% from "partials/_icons.html" import icon %}
 {% block title %}Dashboard · {{ config.SITE_TITLE }}{% endblock %}
+{% block topbar_title %}Dashboard{% endblock %}
+
+{% block topbar_actions %}
+  <a class="btn btn-export btn-sm" href="{{ url_for('admin.export_xlsx') }}">
+    {{ icon('download') }} Export
+  </a>
+{% endblock %}
 
 {% block admin_content %}
-  <h1 class="page__title">Dashboard</h1>
-
-  <div class="stats">
-    <div class="stat">
-      <span class="stat__value">{{ stats.percent }}%</span>
-      <span class="stat__label">fulfilled overall</span>
+  <div class="stat-grid">
+    <div class="stat-card {{ 'c-ok' if stats.percent >= 100 }}">
+      <div class="stat-label">Fulfilled</div>
+      <div class="stat-val">{{ stats.percent }}%</div>
     </div>
-    <div class="stat">
-      <span class="stat__value">{{ stats.total_items }}</span>
-      <span class="stat__label">items in {{ stats.total_categories }} categories</span>
+    <div class="stat-card c-blue">
+      <div class="stat-label">Items</div>
+      <div class="stat-val">{{ stats.total_items }}</div>
     </div>
-    <div class="stat">
-      <span class="stat__value">{{ stats.fully_claimed }}</span>
-      <span class="stat__label">fully claimed</span>
+    <div class="stat-card c-ok">
+      <div class="stat-label">Fully claimed</div>
+      <div class="stat-val">{{ stats.fully_claimed }}</div>
     </div>
-    <div class="stat">
-      <span class="stat__value">{{ stats.total_claims }}</span>
-      <span class="stat__label">claims recorded</span>
+    <div class="stat-card {{ 'c-warn' if outstanding }}">
+      <div class="stat-label">Still open</div>
+      <div class="stat-val">{{ stats.total_items - stats.fully_claimed }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Claims</div>
+      <div class="stat-val">{{ stats.total_claims }}</div>
     </div>
   </div>
 
-  <h2 class="section__title">Still needed most</h2>
-  {% if outstanding %}
-    <div class="table-scroll">
-    <table class="table">
-      <thead>
-        <tr><th>Item</th><th>Category</th><th class="num">Remaining</th><th class="num">Progress</th><th></th></tr>
-      </thead>
-      <tbody>
-        {% for item in outstanding %}
-          <tr>
-            <td>{{ item.name }}</td>
-            <td class="muted">{{ item.category_name }}</td>
-            <td class="num">{{ item.remaining }} {{ item.unit }}</td>
-            <td class="num">{{ item.percent }}%</td>
-            <td class="num"><a href="{{ url_for('admin.item_claims', item_id=item.id) }}">Claims</a></td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-hd-title">Still needed most</span>
+      {% if outstanding %}
+        <span class="badge b-warn">{{ outstanding | length }} shown</span>
+      {% else %}
+        <span class="badge b-ok">{{ icon('check') }} All covered</span>
+      {% endif %}
     </div>
-  {% else %}
-    <p class="empty">
-      {% if stats.total_items %}Everything is fully claimed.{% else %}No items yet.{% endif %}
-    </p>
-  {% endif %}
+
+    {% if outstanding %}
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th><th>Category</th>
+              <th class="num">Remaining</th><th class="num">Progress</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in outstanding %}
+              <tr>
+                <td class="fw-600">{{ item.name }}</td>
+                <td class="text-muted text-sm">{{ item.category_name }}</td>
+                <td class="num mono">{{ item.remaining }} <span class="text-muted text-xs">{{ item.unit }}</span></td>
+                <td class="num">
+                  <span class="badge {{ 'b-bad' if item.percent < 34 else ('b-warn' if item.percent < 100 else 'b-ok') }}">
+                    {{ item.percent }}%
+                  </span>
+                </td>
+                <td class="num">
+                  <a class="btn btn-ghost btn-xs"
+                     href="{{ url_for('admin.item_claims', item_id=item.id) }}">Claims</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card-bd">
+        <div class="empty" style="padding: 28px;">
+          <div class="empty-icon">{{ icon('check') }}</div>
+          <div class="empty-title">
+            {% if stats.total_items %}Everything is covered{% else %}No items yet{% endif %}
+          </div>
+          <div class="empty-desc">
+            {% if stats.total_items %}
+              Every listed item has been fully claimed.
+            {% else %}
+              Add a category and some items to get started.
+            {% endif %}
+          </div>
+          {% if not stats.total_items %}
+            <a class="btn btn-primary btn-sm" href="{{ url_for('admin.categories') }}">
+              {{ icon('plus') }} Add a category
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
 {% endblock %}

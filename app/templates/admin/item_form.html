@@ -1,56 +1,80 @@
 {% extends "admin/_layout.html" %}
+{% from "partials/_icons.html" import icon %}
 {% block title %}{{ 'Edit item' if item else 'New item' }} · {{ config.SITE_TITLE }}{% endblock %}
+{% block topbar_title %}{{ 'Edit item' if item else 'New item' }}{% endblock %}
 
 {% block admin_content %}
-  <h1 class="page__title">{{ 'Edit item' if item else 'New item' }}</h1>
-
-  <div class="panel">
-    <form class="stack" method="post"
-          action="{{ url_for('admin.update_item', item_id=item.id) if item else url_for('admin.create_item') }}">
-      <label>
-        Category
-        <select name="category_id" required>
-          {% for category in categories %}
-            <option value="{{ category.id }}"
-                    {{ 'selected' if category.id == selected_category }}>{{ category.name }}</option>
-          {% endfor %}
-        </select>
-      </label>
-
-      <label>
-        Name
-        <input type="text" name="name" required maxlength="100"
-               value="{{ item.name if item else '' }}">
-      </label>
-
-      <label>
-        Description <span class="muted">(optional)</span>
-        <textarea name="description" rows="3" maxlength="400">{{ item.description if item else '' }}</textarea>
-      </label>
-
-      <div class="field-pair">
-        <label>
-          Quantity needed
-          <input type="number" name="quantity_needed" min="1" step="1" required
-                 value="{{ item.quantity_needed if item else '' }}">
-        </label>
-        <label>
-          Unit
-          <input type="text" name="unit" maxlength="20" placeholder="pcs"
-                 value="{{ item.unit if item else 'pcs' }}">
-        </label>
+  <div class="ph">
+    <div>
+      <div class="ph-title">{{ item.name if item else 'New item' }}</div>
+      <div class="ph-sub">
+        {% if item %}
+          Editing an item in {{ item.category_name }}.
+        {% else %}
+          Something the camp needs people to bring.
+        {% endif %}
       </div>
+    </div>
+    <div class="ph-actions">
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.items') }}">{{ icon('back') }} Back</a>
+    </div>
+  </div>
 
-      <div class="form__actions">
-        <button type="submit" class="btn btn--primary">{{ 'Save changes' if item else 'Create item' }}</button>
-        <a class="btn btn--quiet" href="{{ url_for('admin.items') }}">Cancel</a>
-      </div>
-    </form>
+  <div class="card" style="max-width: 560px;">
+    <div class="card-bd">
+      <form method="post"
+            action="{{ url_for('admin.update_item', item_id=item.id) if item else url_for('admin.create_item') }}">
+        <div class="form-group">
+          <label class="form-label" for="category_id">Category</label>
+          <select class="form-control" id="category_id" name="category_id" required>
+            {% for category in categories %}
+              <option value="{{ category.id }}"
+                      {{ 'selected' if category.id == selected_category }}>{{ category.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="name">Name</label>
+          <input class="form-control" id="name" type="text" name="name" required maxlength="100"
+                 value="{{ item.name if item else '' }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">Description <span class="text-muted">(optional)</span></label>
+          <textarea class="form-control" id="description" name="description" rows="3"
+                    maxlength="400">{{ item.description if item else '' }}</textarea>
+          <div class="form-hint">Shown under the item name on the public page.</div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="quantity_needed">Quantity needed</label>
+            <input class="form-control" id="quantity_needed" type="number" name="quantity_needed"
+                   min="1" step="1" required value="{{ item.quantity_needed if item else '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="unit">Unit</label>
+            <input class="form-control" id="unit" type="text" name="unit" maxlength="20"
+                   placeholder="pcs" value="{{ item.unit if item else 'pcs' }}">
+            <div class="form-hint">e.g. pcs, boxes, kg</div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            {{ icon('check') }} {{ 'Save changes' if item else 'Create item' }}
+          </button>
+          <a class="btn btn-ghost" href="{{ url_for('admin.items') }}">Cancel</a>
+        </div>
+      </form>
+    </div>
   </div>
 
   {% if item %}
-    <p class="muted">
-      <a href="{{ url_for('admin.item_claims', item_id=item.id) }}">View claims for this item →</a>
-    </p>
+    <div class="text-sm mt-3">
+      <a class="fw-600" style="color: var(--accent);"
+         href="{{ url_for('admin.item_claims', item_id=item.id) }}">View claims for this item →</a>
+    </div>
   {% endif %}
 {% endblock %}

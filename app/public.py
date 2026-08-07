@@ -61,6 +61,18 @@ def load_board():
     return board
 
 
+def board_summary(board):
+    """Headline numbers for the strip at the top of the public page."""
+    entries = [entry for category in board for entry in category["entries"]]
+    needed = sum(e["quantity_needed"] for e in entries)
+    covered = sum(min(e["claimed"], e["quantity_needed"]) for e in entries)
+    return {
+        "total_items": len(entries),
+        "open_items": sum(1 for e in entries if e["remaining"] > 0),
+        "percent": round(covered / needed * 100) if needed else 0,
+    }
+
+
 def _validate(form):
     """Return an error message, or None if the submission looks usable."""
     if not form["claimant_name"]:
@@ -79,8 +91,14 @@ def _validate(form):
 
 @bp.get("/")
 def index():
+    board = load_board()
     return render_template(
-        "index.html", board=load_board(), open_item_id=None, claim_error=None, form={}
+        "index.html",
+        board=board,
+        summary=board_summary(board),
+        open_item_id=None,
+        claim_error=None,
+        form={},
     )
 
 
@@ -134,10 +152,12 @@ def claim(item_id):
         flash(f"Thank you, {form['claimant_name']}! Your claim is recorded.", "success")
         return redirect(url_for("public.index") + f"#item-{item_id}")
 
+    board = load_board()
     return (
         render_template(
             "index.html",
-            board=load_board(),
+            board=board,
+            summary=board_summary(board),
             open_item_id=item_id,
             claim_error=error,
             form=form,

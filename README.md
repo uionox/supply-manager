@@ -46,8 +46,22 @@ To load a few sample categories and items:
 | `app/admin.py` | Dashboard, category/item CRUD, claim moderation, Excel export |
 | `app/auth.py` | Single-password admin login |
 | `app/db.py` | SQLite connection and the write-transaction helper |
+| `app/static/style.css` | The whole design system — tokens, components, responsive rules |
+| `app/templates/partials/_icons.html` | Inline SVG icon macro |
 | `schema.sql` | Table definitions, re-runnable |
 | `deploy/` | systemd unit, Caddyfile, and step-by-step server setup |
+
+## Design
+
+Light-only, Inter for text and JetBrains Mono for quantities, matching the
+IMS/warehouse admin look: `#f1f3f5` page, white cards on a 1px `#e2e5e9`
+border at 8px radius, and a `#2563eb` accent. Colour carries meaning —
+green for covered, amber for partly covered, red for destructive actions —
+so the accent stays blue rather than competing with the danger red.
+
+The public page is a single centred column built for phones. The admin side
+is the familiar sidebar shell, which collapses to a drawer plus a bottom
+nav bar under 768px.
 
 ## Notes
 

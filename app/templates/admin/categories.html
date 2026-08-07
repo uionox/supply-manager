@@ -1,40 +1,67 @@
 {% extends "admin/_layout.html" %}
+{% from "partials/_icons.html" import icon %}
 {% block title %}Categories · {{ config.SITE_TITLE }}{% endblock %}
+{% block topbar_title %}Categories{% endblock %}
 
 {% block admin_content %}
-  <h1 class="page__title">Categories</h1>
+  <div class="ph">
+    <div>
+      <div class="ph-title">Categories</div>
+      <div class="ph-sub">Groups that items are listed under on the public page.</div>
+    </div>
+  </div>
 
-  <form class="inline-form" method="post" action="{{ url_for('admin.create_category') }}">
-    <input type="text" name="name" placeholder="New category name" required maxlength="60">
-    <button type="submit" class="btn btn--primary">Add</button>
-  </form>
+  <div class="card mb-4">
+    <div class="card-bd">
+      <form class="flex gap-2 wrap items-center"
+            method="post" action="{{ url_for('admin.create_category') }}">
+        <input class="form-control flex-1" type="text" name="name" required maxlength="60"
+               placeholder="New category name" style="min-width: 180px;">
+        <button type="submit" class="btn btn-primary">{{ icon('plus') }} Add</button>
+      </form>
+    </div>
+  </div>
 
-  {% if categories %}
-    <ul class="rows">
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-hd-title">All categories</span>
+      <span class="badge b-gray">{{ categories | length }}</span>
+    </div>
+
+    {% if categories %}
       {% for category in categories %}
-        <li class="row">
-          <form class="row__main" method="post"
-                action="{{ url_for('admin.update_category', cat_id=category.id) }}">
-            <input type="text" name="name" value="{{ category.name }}" required maxlength="60">
-            <button type="submit" class="btn btn--quiet">Save</button>
+        <div class="row-item">
+          <form class="flex gap-2 items-center flex-1" style="min-width: 180px;"
+                method="post" action="{{ url_for('admin.update_category', cat_id=category.id) }}">
+            <input class="form-control flex-1" type="text" name="name"
+                   value="{{ category.name }}" required maxlength="60">
+            <button type="submit" class="btn btn-ghost btn-sm">Save</button>
           </form>
-          <span class="muted row__meta">{{ category.item_count }} item(s)</span>
-          <div class="row__actions">
+
+          <span class="badge b-gray nowrap">{{ category.item_count }} item{{ 's' if category.item_count != 1 }}</span>
+
+          <div class="row-actions">
             <form method="post" action="{{ url_for('admin.move_category', cat_id=category.id) }}">
-              <button class="btn btn--icon" name="direction" value="up"
-                      title="Move up" {{ 'disabled' if loop.first }}>↑</button>
+              <button class="btn btn-ghost btn-icon" name="direction" value="up"
+                      title="Move up" {{ 'disabled' if loop.first }}>{{ icon('up') }}</button>
             </form>
             <form method="post" action="{{ url_for('admin.move_category', cat_id=category.id) }}">
-              <button class="btn btn--icon" name="direction" value="down"
-                      title="Move down" {{ 'disabled' if loop.last }}>↓</button>
+              <button class="btn btn-ghost btn-icon" name="direction" value="down"
+                      title="Move down" {{ 'disabled' if loop.last }}>{{ icon('down') }}</button>
             </form>
-            <a class="btn btn--danger"
-               href="{{ url_for('admin.delete_category', cat_id=category.id) }}">Delete</a>
+            <a class="btn btn-danger btn-icon" title="Delete"
+               href="{{ url_for('admin.delete_category', cat_id=category.id) }}">{{ icon('trash') }}</a>
           </div>
-        </li>
+        </div>
       {% endfor %}
-    </ul>
-  {% else %}
-    <p class="empty">No categories yet. Add one above to get started.</p>
-  {% endif %}
+    {% else %}
+      <div class="card-bd">
+        <div class="empty" style="padding: 28px;">
+          <div class="empty-icon">{{ icon('tag') }}</div>
+          <div class="empty-title">No categories yet</div>
+          <div class="empty-desc">Add one above — every item belongs to a category.</div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
 {% endblock %}

@@ -1,18 +1,30 @@
 {% extends "admin/_layout.html" %}
+{% from "partials/_icons.html" import icon %}
 {% block title %}Confirm delete · {{ config.SITE_TITLE }}{% endblock %}
+{% block topbar_title %}Confirm delete{% endblock %}
 
 {% block admin_content %}
-  <div class="panel panel--narrow">
-    <h1 class="panel__title">{{ title }}</h1>
-    <ul class="warning-list">
-      {% for line in lines %}<li>{{ line }}</li>{% endfor %}
-    </ul>
-    <p class="muted">This can't be undone.</p>
-    <div class="form__actions">
-      <form method="post" action="{{ action }}">
-        <button type="submit" class="btn btn--danger">Yes, delete</button>
-      </form>
-      <a class="btn btn--quiet" href="{{ cancel }}">Cancel</a>
+  <div class="card" style="max-width: 460px;">
+    <div class="card-hd">
+      <span class="card-hd-title">{{ title }}</span>
+      <span class="badge b-bad">{{ icon('alert') }} Permanent</span>
+    </div>
+    <div class="card-bd">
+      <div class="flex" style="flex-direction: column; gap: 8px;">
+        {% for line in lines %}
+          <div class="text-sm" style="padding: 8px 10px; background: var(--danger-bg); border-radius: 6px;">
+            {{ line }}
+          </div>
+        {% endfor %}
+      </div>
+      <div class="text-xs text-muted mt-3 mb-4">This can't be undone.</div>
+
+      <div class="form-actions">
+        <form method="post" action="{{ action }}">
+          <button type="submit" class="btn btn-danger">{{ icon('trash') }} Yes, delete</button>
+        </form>
+        <a class="btn btn-ghost" href="{{ cancel }}">Cancel</a>
+      </div>
     </div>
   </div>
 {% endblock %}

@@ -1,95 +1,148 @@
-{% extends "base.html" %}
+{% extends "_public.html" %}
+{% from "partials/_icons.html" import icon %}
 
-{% block content %}
-  <p class="lede">
-    Here's what the camp still needs. Pick anything you can bring and let us
-    know how much — everyone can see what's already covered.
-  </p>
+{% block main %}
+  {% if board %}
+    <div class="card overview">
+      <div class="card-bd">
+        <div class="overview-top">
+          <div>
+            <div class="overview-pct">{{ summary.percent }}%</div>
+            <div class="overview-note">of what the camp needs is covered</div>
+          </div>
+          <div class="text-xs text-muted" style="text-align: right;">
+            <div><span class="fw-700 text-2">{{ summary.open_items }}</span> still need help</div>
+            <div>{{ summary.total_items }} items listed</div>
+          </div>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill{{ ' is-full' if summary.percent >= 100 }}"
+               style="width: {{ summary.percent }}%"></div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
 
   {% if not board %}
-    <p class="empty">Nothing has been listed yet. Please check back soon.</p>
+    <div class="card">
+      <div class="empty">
+        <div class="empty-icon">{{ icon('box') }}</div>
+        <div class="empty-title">Nothing listed yet</div>
+        <div class="empty-desc">The organisers haven't added anything to bring. Please check back soon.</div>
+      </div>
+    </div>
   {% endif %}
 
   {% for category in board %}
-    <section class="category">
-      <h2 class="category__name">{{ category.name }}</h2>
+    <section class="cat-block">
+      <div class="cat-head">
+        <span class="cat-name">{{ category.name }}</span>
+        <span class="cat-rule"></span>
+      </div>
 
-      {% for item in category.entries %}
-        {% set is_done = item.remaining <= 0 %}
-        <article class="item{% if is_done %} item--done{% endif %}" id="item-{{ item.id }}">
-          <div class="item__head">
-            <h3 class="item__name">{{ item.name }}</h3>
-            {% if is_done %}<span class="badge">Fully claimed</span>{% endif %}
-          </div>
-
-          {% if item.description %}
-            <p class="item__desc">{{ item.description }}</p>
-          {% endif %}
-
+      <div class="item-list">
+        {% for item in category.entries %}
+          {% set is_full = item.remaining <= 0 %}
           {% set percent = [(item.claimed / item.quantity_needed * 100) | round | int, 100] | min %}
-          <div class="progress" role="img"
-               aria-label="{{ percent }} percent claimed">
-            <div class="progress__bar" style="width: {{ percent }}%"></div>
-          </div>
-          <p class="progress__label">
-            <strong>{{ item.claimed }}</strong> / {{ item.quantity_needed }} {{ item.unit }} claimed
-            {% if not is_done %}<span class="muted">· {{ item.remaining }} still needed</span>{% endif %}
-          </p>
 
-          {% if item.claims %}
-            <ul class="claims">
-              {% for claim in item.claims %}
-                <li class="claims__row">
-                  <span class="claims__who">{{ claim.claimant_name }}</span>
-                  <span class="claims__qty">{{ claim.quantity }} {{ item.unit }}</span>
-                  {% if claim.note %}<span class="claims__note">{{ claim.note }}</span>{% endif %}
-                </li>
-              {% endfor %}
-            </ul>
-          {% endif %}
-
-          {% if not is_done %}
-            <details class="claim" {% if open_item_id == item.id %}open{% endif %}>
-              <summary class="claim__toggle">Claim this</summary>
-
-              {% if open_item_id == item.id and claim_error %}
-                <p class="flash flash--error">{{ claim_error }}</p>
+          <article class="item{{ ' is-full' if is_full }}" id="item-{{ item.id }}">
+            <div class="item-hd">
+              <div>
+                <div class="item-name">{{ item.name }}</div>
+                {% if item.description %}
+                  <div class="item-desc">{{ item.description }}</div>
+                {% endif %}
+              </div>
+              {% if is_full %}
+                <span class="badge b-ok">{{ icon('check') }} Covered</span>
+              {% else %}
+                <span class="badge b-gray">{{ item.remaining }} to go</span>
               {% endif %}
+            </div>
 
-              <form class="claim__form" method="post"
-                    action="{{ url_for('public.claim', item_id=item.id) }}">
-                <label>
-                  Your name
-                  <input type="text" name="claimant_name" maxlength="80" required
-                         value="{{ form.claimant_name if open_item_id == item.id else '' }}">
-                </label>
-                <label>
-                  Phone number
-                  <input type="tel" name="phone_number" maxlength="25" required
-                         inputmode="tel" placeholder="e.g. +961 70 123 456"
-                         value="{{ form.phone_number if open_item_id == item.id else '' }}">
-                </label>
-                <label>
-                  How many {{ item.unit }}? <span class="muted">(max {{ item.remaining }})</span>
-                  <input type="number" name="quantity" min="1" max="{{ item.remaining }}"
-                         step="1" required inputmode="numeric"
-                         value="{{ form.quantity if open_item_id == item.id else '' }}">
-                </label>
-                <label>
-                  Note <span class="muted">(optional)</span>
-                  <textarea name="note" rows="2" maxlength="300"
-                            placeholder="e.g. I can drop these off on Friday">{{ form.note if open_item_id == item.id else '' }}</textarea>
-                </label>
-                <button type="submit" class="btn btn--primary">Confirm claim</button>
-              </form>
-            </details>
-          {% endif %}
-        </article>
-      {% endfor %}
+            <div class="item-nums">
+              <span class="item-claimed">{{ item.claimed }}</span>
+              <span class="item-total">/ {{ item.quantity_needed }} {{ item.unit }}</span>
+              {% if not is_full %}
+                <span class="item-left">{{ percent }}%</span>
+              {% endif %}
+            </div>
+            <div class="prog-track" role="img" aria-label="{{ percent }} percent claimed">
+              <div class="prog-fill{{ ' is-full' if is_full }}" style="width: {{ percent }}%"></div>
+            </div>
+
+            {% if item.claims %}
+              <div class="claimers">
+                {% for claim in item.claims %}
+                  <div class="claimer">
+                    <span class="claimer-name">{{ claim.claimant_name }}</span>
+                    <span class="claimer-qty">{{ claim.quantity }} {{ item.unit }}</span>
+                    {% if claim.note %}
+                      <span class="claimer-note">{{ claim.note }}</span>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            {% if not is_full %}
+              {% set is_open = open_item_id == item.id %}
+              <details class="claim"{{ ' open' if is_open }}>
+                <summary>{{ icon('plus') }} I'll bring some</summary>
+
+                <div class="claim-body">
+                  {% if is_open and claim_error %}
+                    <div class="flash flash-error mb-3">
+                      <span>&#9888;</span><span class="flex-1">{{ claim_error }}</span>
+                    </div>
+                  {% endif %}
+
+                  <form class="claim-form" method="post"
+                        action="{{ url_for('public.claim', item_id=item.id) }}">
+                    <div class="form-group">
+                      <label class="form-label" for="name-{{ item.id }}">Your name</label>
+                      <input class="form-control" id="name-{{ item.id }}" type="text"
+                             name="claimant_name" maxlength="80" required
+                             value="{{ form.claimant_name if is_open else '' }}">
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="phone-{{ item.id }}">Phone number</label>
+                      <input class="form-control" id="phone-{{ item.id }}" type="tel"
+                             name="phone_number" maxlength="25" required inputmode="tel"
+                             placeholder="e.g. +961 70 123 456"
+                             value="{{ form.phone_number if is_open else '' }}">
+                      <div class="form-hint">So the organisers can reach you. Not shown publicly.</div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="qty-{{ item.id }}">
+                        How many {{ item.unit }}?
+                      </label>
+                      <input class="form-control" id="qty-{{ item.id }}" type="number"
+                             name="quantity" min="1" max="{{ item.remaining }}" step="1"
+                             required inputmode="numeric"
+                             value="{{ form.quantity if is_open else '' }}">
+                      <div class="form-hint">{{ item.remaining }} {{ item.unit }} still needed.</div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="note-{{ item.id }}">Note <span class="text-muted">(optional)</span></label>
+                      <textarea class="form-control" id="note-{{ item.id }}" name="note"
+                                rows="2" maxlength="300"
+                                placeholder="e.g. I can drop these off on Friday">{{ form.note if is_open else '' }}</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full">
+                      {{ icon('check') }} Confirm
+                    </button>
+                  </form>
+                </div>
+              </details>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
     </section>
   {% endfor %}
-{% endblock %}
-
-{% block scripts %}
-  <script src="{{ url_for('static', filename='claim.js') }}" defer></script>
 {% endblock %}

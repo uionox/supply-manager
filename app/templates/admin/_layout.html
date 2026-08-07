@@ -1,25 +1,72 @@
 {% extends "base.html" %}
+{% from "partials/_icons.html" import icon %}
 
-{% block masthead_extra %}
-  <form class="masthead__logout" method="post" action="{{ url_for('auth.logout') }}">
-    <button type="submit" class="btn btn--quiet">Sign out</button>
-  </form>
-{% endblock %}
+{% block body_class %}app{% endblock %}
 
-{% block content %}
-  {% set here = request.endpoint or '' %}
-  <nav class="adminnav">
-    <a href="{{ url_for('admin.dashboard') }}"
-       class="{{ 'is-active' if here == 'admin.dashboard' }}">Dashboard</a>
-    <a href="{{ url_for('admin.items') }}"
-       class="{{ 'is-active' if 'item' in here or 'claim' in here }}">Items</a>
-    <a href="{{ url_for('admin.categories') }}"
-       class="{{ 'is-active' if 'categor' in here }}">Categories</a>
-    <a href="{{ url_for('admin.export_xlsx') }}">Export Excel</a>
-    <a href="{{ url_for('public.index') }}">View public page</a>
+{% block body %}
+{% set here = request.endpoint or '' %}
+{% set on_items = 'item' in here or 'claim' in here %}
+{% set on_cats = 'categor' in here %}
+
+<div id="sb-overlay" onclick="closeSb()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <span class="brand-mark">{{ icon('box') }}</span>
+    <span class="brand-lines">
+      <span class="brand-text">{{ config.SITE_TITLE }}</span>
+      <span class="brand-sub">Organiser tools</span>
+    </span>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section">Overview</div>
+    <a class="sb-item {{ 'active' if here == 'admin.dashboard' }}"
+       href="{{ url_for('admin.dashboard') }}">{{ icon('grid') }} Dashboard</a>
+
+    <div class="sb-section">Manage</div>
+    <a class="sb-item {{ 'active' if on_items }}"
+       href="{{ url_for('admin.items') }}">{{ icon('box') }} Items</a>
+    <a class="sb-item {{ 'active' if on_cats }}"
+       href="{{ url_for('admin.categories') }}">{{ icon('tag') }} Categories</a>
+
+    <div class="sb-section">Data</div>
+    <a class="sb-item" href="{{ url_for('admin.export_xlsx') }}">{{ icon('download') }} Export Excel</a>
   </nav>
 
-  {% block admin_content %}{% endblock %}
-{% endblock %}
+  <div class="sb-footer">
+    <a class="sb-footer-link" href="{{ url_for('public.index') }}">
+      {{ icon('external') }} View public page
+    </a>
+    <form method="post" action="{{ url_for('auth.logout') }}">
+      <button type="submit" class="sb-footer-link logout">{{ icon('logout') }} Sign out</button>
+    </form>
+  </div>
+</aside>
 
-{% block footer %}{% endblock %}
+<nav class="bottom-nav">
+  <a class="bn-item {{ 'active' if here == 'admin.dashboard' }}"
+     href="{{ url_for('admin.dashboard') }}">{{ icon('grid') }} Home</a>
+  <a class="bn-item {{ 'active' if on_items }}"
+     href="{{ url_for('admin.items') }}">{{ icon('box') }} Items</a>
+  <a class="bn-item {{ 'active' if on_cats }}"
+     href="{{ url_for('admin.categories') }}">{{ icon('tag') }} Categories</a>
+  <button type="button" class="bn-item" onclick="openSb()">{{ icon('menu') }} More</button>
+</nav>
+
+<div class="main">
+  <header class="topbar">
+    <div class="flex items-center gap-2">
+      <button type="button" class="btn btn-ghost btn-icon mob-menu" onclick="openSb()"
+              aria-label="Open menu">{{ icon('menu') }}</button>
+      <span class="tb-crumb-cur">{% block topbar_title %}{% endblock %}</span>
+    </div>
+    <div class="tb-right">{% block topbar_actions %}{% endblock %}</div>
+  </header>
+
+  <div class="page">
+    {% include "partials/_flashes.html" %}
+    {% block admin_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

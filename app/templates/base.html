@@ -1,41 +1,19 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
   <title>{% block title %}{{ config.SITE_TITLE }}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" href="data:,">
 </head>
-<body>
-  <header class="masthead">
-    <div class="wrap masthead__inner">
-      <a class="masthead__title" href="{{ url_for('public.index') }}">{{ config.SITE_TITLE }}</a>
-      {% block masthead_extra %}{% endblock %}
-    </div>
-  </header>
-
-  <main class="wrap">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="flashes">
-          {% for category, message in messages %}
-            <p class="flash flash--{{ category }}">{{ message }}</p>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
-
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="wrap footer">
-    {% block footer %}
-      <a href="{{ url_for('admin.dashboard') }}">Admin</a>
-    {% endblock %}
-  </footer>
-
-  {% block scripts %}{% endblock %}
+<body class="{% block body_class %}{% endblock %}">
+{% block body %}{% endblock %}
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </body>
 </html>

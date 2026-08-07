@@ -1,58 +1,89 @@
 {% extends "admin/_layout.html" %}
+{% from "partials/_icons.html" import icon %}
 {% block title %}Items · {{ config.SITE_TITLE }}{% endblock %}
+{% block topbar_title %}Items{% endblock %}
+
+{% block topbar_actions %}
+  {% if has_categories %}
+    <a class="btn btn-primary btn-sm" href="{{ url_for('admin.new_item') }}">
+      {{ icon('plus') }} Add item
+    </a>
+  {% endif %}
+{% endblock %}
 
 {% block admin_content %}
-  <div class="page__head">
-    <h1 class="page__title">Items</h1>
-    {% if has_categories %}
-      <a class="btn btn--primary" href="{{ url_for('admin.new_item') }}">Add item</a>
-    {% endif %}
+  <div class="ph">
+    <div>
+      <div class="ph-title">Items</div>
+      <div class="ph-sub">What the camp is asking people to bring.</div>
+    </div>
   </div>
 
   {% if not has_categories %}
-    <p class="empty">
-      Create a <a href="{{ url_for('admin.categories') }}">category</a> first —
-      every item belongs to one.
-    </p>
+    <div class="card">
+      <div class="empty">
+        <div class="empty-icon">{{ icon('tag') }}</div>
+        <div class="empty-title">Create a category first</div>
+        <div class="empty-desc">Every item belongs to a category.</div>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('admin.categories') }}">
+          {{ icon('plus') }} Add a category
+        </a>
+      </div>
+    </div>
   {% endif %}
 
   {% for category, rows in grouped %}
-    <section class="category">
-      <h2 class="category__name">{{ category.name }}</h2>
+    <div class="card mb-4">
+      <div class="card-hd">
+        <span class="card-hd-title">{{ category.name }}</span>
+        <a class="btn btn-ghost btn-xs"
+           href="{{ url_for('admin.new_item', category_id=category.id) }}">
+          {{ icon('plus') }} Add here
+        </a>
+      </div>
 
       {% if rows %}
-        <ul class="rows">
-          {% for item in rows %}
-            <li class="row row--item">
-              <div class="row__main">
-                <a class="row__title" href="{{ url_for('admin.edit_item', item_id=item.id) }}">{{ item.name }}</a>
-                <span class="muted row__meta">
-                  {{ item.claimed }} / {{ item.quantity_needed }} {{ item.unit }}
-                  · {{ item.percent }}%
-                  · <a href="{{ url_for('admin.item_claims', item_id=item.id) }}">{{ item.claim_count }} claim(s)</a>
-                </span>
+        {% for item in rows %}
+          <div class="row-item">
+            <div class="row-info">
+              <div class="row-name">{{ item.name }}</div>
+              <div class="row-meta">
+                <span class="mono">{{ item.claimed }}/{{ item.quantity_needed }}</span> {{ item.unit }}
+                · {{ item.claim_count }} claim{{ 's' if item.claim_count != 1 }}
               </div>
-              <div class="row__actions">
-                <form method="post" action="{{ url_for('admin.move_item', item_id=item.id) }}">
-                  <button class="btn btn--icon" name="direction" value="up"
-                          title="Move up" {{ 'disabled' if loop.first }}>↑</button>
-                </form>
-                <form method="post" action="{{ url_for('admin.move_item', item_id=item.id) }}">
-                  <button class="btn btn--icon" name="direction" value="down"
-                          title="Move down" {{ 'disabled' if loop.last }}>↓</button>
-                </form>
-                <a class="btn btn--quiet" href="{{ url_for('admin.edit_item', item_id=item.id) }}">Edit</a>
-                <a class="btn btn--danger" href="{{ url_for('admin.delete_item', item_id=item.id) }}">Delete</a>
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
+            </div>
+
+            <span class="badge {{ 'b-ok' if item.remaining <= 0 else ('b-warn' if item.percent < 100 else 'b-info') }} nowrap">
+              {% if item.remaining <= 0 %}{{ icon('check') }} Covered{% else %}{{ item.percent }}%{% endif %}
+            </span>
+
+            <div class="row-actions">
+              <form method="post" action="{{ url_for('admin.move_item', item_id=item.id) }}">
+                <button class="btn btn-ghost btn-icon" name="direction" value="up"
+                        title="Move up" {{ 'disabled' if loop.first }}>{{ icon('up') }}</button>
+              </form>
+              <form method="post" action="{{ url_for('admin.move_item', item_id=item.id) }}">
+                <button class="btn btn-ghost btn-icon" name="direction" value="down"
+                        title="Move down" {{ 'disabled' if loop.last }}>{{ icon('down') }}</button>
+              </form>
+              <a class="btn btn-ghost btn-icon" title="Claims"
+                 href="{{ url_for('admin.item_claims', item_id=item.id) }}">{{ icon('users') }}</a>
+              <a class="btn btn-ghost btn-icon" title="Edit"
+                 href="{{ url_for('admin.edit_item', item_id=item.id) }}">{{ icon('edit') }}</a>
+              <a class="btn btn-danger btn-icon" title="Delete"
+                 href="{{ url_for('admin.delete_item', item_id=item.id) }}">{{ icon('trash') }}</a>
+            </div>
+          </div>
+        {% endfor %}
       {% else %}
-        <p class="empty">
-          No items here yet.
-          <a href="{{ url_for('admin.new_item', category_id=category.id) }}">Add one</a>.
-        </p>
+        <div class="card-bd">
+          <div class="text-sm text-muted">
+            Nothing here yet.
+            <a class="fw-600" style="color: var(--accent);"
+               href="{{ url_for('admin.new_item', category_id=category.id) }}">Add an item</a>.
+          </div>
+        </div>
       {% endif %}
-    </section>
+    </div>
   {% endfor %}
 {% endblock %}

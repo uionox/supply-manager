@@ -1,44 +1,90 @@
 {% extends "admin/_layout.html" %}
+{% from "partials/_icons.html" import icon %}
 {% block title %}Claims: {{ item.name }} · {{ config.SITE_TITLE }}{% endblock %}
+{% block topbar_title %}Claims{% endblock %}
+
+{% block topbar_actions %}
+  <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.edit_item', item_id=item.id) }}">
+    {{ icon('edit') }} Edit item
+  </a>
+{% endblock %}
 
 {% block admin_content %}
-  <p class="crumb"><a href="{{ url_for('admin.items') }}">← All items</a></p>
-  <h1 class="page__title">{{ item.name }}</h1>
-  <p class="muted">
-    {{ item.category_name }} ·
-    {{ item.claimed }} / {{ item.quantity_needed }} {{ item.unit }} claimed ·
-    {{ item.remaining }} remaining
-  </p>
-
-  {% if claims %}
-    <div class="table-scroll">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Claimant</th><th>Phone</th><th class="num">Quantity</th>
-          <th>Note</th><th>When</th><th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for claim in claims %}
-          <tr>
-            <td>{{ claim.claimant_name }}</td>
-            <td><a href="tel:{{ claim.phone_number | replace(' ', '') }}">{{ claim.phone_number }}</a></td>
-            <td class="num">{{ claim.quantity }} {{ item.unit }}</td>
-            <td class="muted">{{ claim.note or '—' }}</td>
-            <td class="muted nowrap">{{ claim.created_at }}</td>
-            <td class="num">
-              <form method="post" action="{{ url_for('admin.delete_claim', claim_id=claim.id) }}"
-                    onsubmit="return confirm('Cancel {{ claim.claimant_name }}’s claim of {{ claim.quantity }} {{ item.unit }}?');">
-                <button type="submit" class="btn btn--danger">Cancel</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="ph">
+    <div>
+      <div class="ph-title">{{ item.name }}</div>
+      <div class="ph-sub">
+        {{ item.category_name }} ·
+        <span class="mono">{{ item.claimed }}/{{ item.quantity_needed }}</span> {{ item.unit }} claimed
+      </div>
     </div>
-  {% else %}
-    <p class="empty">Nobody has claimed this item yet.</p>
-  {% endif %}
+    <div class="ph-actions">
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.items') }}">{{ icon('back') }} All items</a>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card {{ 'c-ok' if item.remaining <= 0 }}">
+      <div class="stat-label">Fulfilled</div>
+      <div class="stat-val">{{ item.percent }}%</div>
+    </div>
+    <div class="stat-card {{ 'c-warn' if item.remaining > 0 }}">
+      <div class="stat-label">Remaining</div>
+      <div class="stat-val">{{ item.remaining }}</div>
+    </div>
+    <div class="stat-card c-blue">
+      <div class="stat-label">Claims</div>
+      <div class="stat-val">{{ claims | length }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <span class="card-hd-title">Who's bringing what</span>
+      <span class="badge b-gray">Phone numbers are admin-only</span>
+    </div>
+
+    {% if claims %}
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Claimant</th><th>Phone</th><th class="num">Quantity</th>
+              <th>Note</th><th>When</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for claim in claims %}
+              <tr>
+                <td class="fw-600">{{ claim.claimant_name }}</td>
+                <td>
+                  <a class="flex items-center gap-1 text-sm" style="color: var(--accent);"
+                     href="tel:{{ claim.phone_number | replace(' ', '') }}">
+                    {{ claim.phone_number }}
+                  </a>
+                </td>
+                <td class="num mono">{{ claim.quantity }} <span class="text-muted text-xs">{{ item.unit }}</span></td>
+                <td class="text-muted text-sm">{{ claim.note or '—' }}</td>
+                <td class="text-muted text-xs nowrap">{{ claim.created_at }}</td>
+                <td class="num">
+                  <form method="post" action="{{ url_for('admin.delete_claim', claim_id=claim.id) }}"
+                        onsubmit="return confirm('Cancel {{ claim.claimant_name }}’s claim of {{ claim.quantity }} {{ item.unit }}?');">
+                    <button type="submit" class="btn btn-danger btn-xs">{{ icon('trash') }} Cancel</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card-bd">
+        <div class="empty" style="padding: 28px;">
+          <div class="empty-icon">{{ icon('users') }}</div>
+          <div class="empty-title">No claims yet</div>
+          <div class="empty-desc">Nobody has offered to bring this item.</div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
 {% endblock %}
