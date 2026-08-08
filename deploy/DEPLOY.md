@@ -33,18 +33,22 @@ sudo -u supply cp /srv/supply-manager/.env.example /srv/supply-manager/.env
 sudo chmod 600 /srv/supply-manager/.env
 ```
 
-Generate the two secrets and paste them into `.env`:
+The only required value is the admin password hash:
 
 ```bash
-python3 -c "import secrets; print(secrets.token_hex(32))"
+cd /srv/supply-manager && sudo -u supply .venv/bin/flask --app wsgi hash-password "your-admin-password"
 ```
 
-```bash
-sudo -u supply /srv/supply-manager/.venv/bin/flask --app wsgi hash-password "your-admin-password"
-```
+Paste the output as `ADMIN_PASSWORD_HASH`. The plain password is never stored.
 
-> Run the `hash-password` command from `/srv/supply-manager`. The output is
-> the `ADMIN_PASSWORD_HASH` value — the plain password is never stored.
+Check the rest of `.env` before moving on:
+
+| Setting | Why it matters |
+| --- | --- |
+| `SESSION_COOKIE_SECURE=1` | Keeps the admin cookie off plain HTTP. Only ever set to `0` for local development. |
+| `TRUST_PROXY=1` | Caddy is in front, so the real visitor IP is used for login throttling instead of `127.0.0.1`. Leave at `0` if nothing proxies the app, or the header can be forged. |
+| `DISPLAY_TIMEZONE` | Timezone claim times are shown in. Storage is always UTC. |
+| `SECRET_KEY` | Optional. Left unset, a random key is generated once into `instance/secret_key`. Setting it to an obvious placeholder makes the app refuse to start, on purpose. |
 
 ## 5. Create the database
 
@@ -95,6 +99,27 @@ half-written page. Install `sqlite3` (`sudo apt install sqlite3`) for this.
 ```bash
 cd /srv/supply-manager && sudo -u supply git pull && sudo systemctl restart supply-manager
 ```
+
+Schema changes apply themselves on the next start, so no migration step.
+
+## Checking it worked
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' https://supplies.example.org/
+```
+
+```bash
+sudo journalctl -u supply-manager -n 30 --no-pager
+```
+
+Then sign in at `/admin`, add a category and an item, and claim it from a
+phone. Worth running the test suite on the server once too:
+
+```bash
+cd /srv/supply-manager && sudo -u supply .venv/bin/python -m pytest
+```
+
+That needs the dev requirements: `.venv/bin/pip install -r requirements-dev.txt`.
 
 ## Shutting the site down for good
 

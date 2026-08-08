@@ -38,6 +38,39 @@ To load a few sample categories and items:
 .venv/Scripts/flask --app wsgi seed-demo
 ```
 
+## Tests
+
+```bash
+.venv/Scripts/pip install -r requirements-dev.txt
+```
+
+```bash
+.venv/Scripts/python -m pytest
+```
+
+Each test gets its own throwaway SQLite file, so they can run in any order
+and leave nothing behind. Coverage is aimed at the things that would
+actually hurt: the claim race, the schema migrations, access control, and
+the two note levels.
+
+## Security notes
+
+- **The session key is never a shared default.** `SECRET_KEY` from the
+  environment wins; with nothing set, a random key is generated once into
+  `instance/secret_key`. Setting it to a known placeholder makes the app
+  refuse to start, because a predictable key lets anyone forge an admin
+  session cookie.
+- **Admin sign-in is throttled** — eight failures from one IP within fifteen
+  minutes and that IP waits. In memory, so it resets on restart and counts
+  per Gunicorn worker; enough to stop a guessing loop.
+- **Set `TRUST_PROXY=1` behind Caddy**, or every visitor looks like
+  `127.0.0.1` and one attacker locks everybody out. Leave it off when the
+  app is exposed directly, or the header can be forged.
+- Cross-site POSTs are covered by `SESSION_COOKIE_SAMESITE='Lax'` rather
+  than CSRF tokens.
+- Anyone with the link can claim items and type into the public name and
+  note fields. The only moderation is an organiser deleting a claim.
+
 ## Layout
 
 | Path | What it holds |
@@ -45,7 +78,11 @@ To load a few sample categories and items:
 | `app/public.py` | The public browse-and-claim page |
 | `app/admin.py` | Dashboard, category/item CRUD, claim moderation, Excel export |
 | `app/auth.py` | Single-password admin login |
-| `app/db.py` | SQLite connection and the write-transaction helper |
+| `app/db.py` | SQLite connection, write-transaction helper, schema migrations |
+| `app/security.py` | Session-key resolution and login throttling |
+| `app/i18n.py` | English/Arabic strings |
+| `app/timefmt.py` | UTC storage shown in camp time |
+| `tests/` | pytest suite |
 | `app/static/style.css` | The whole design system — tokens, components, responsive rules |
 | `app/templates/partials/_icons.html` | Inline SVG icon macro |
 | `schema.sql` | Table definitions, re-runnable |

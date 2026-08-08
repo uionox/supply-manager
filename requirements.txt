@@ -1,3 +1,6 @@
 Flask==3.1.0
 gunicorn==23.0.0
 openpyxl==3.1.5
+# Timezone database. Present on most Linux images already, but pinning it
+# means DISPLAY_TIMEZONE works the same on any machine.
+tzdata==2025.2

@@ -14,7 +14,11 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
+from .security import LoginThrottle
+
 bp = Blueprint("auth", __name__, url_prefix="/admin")
+
+throttle = LoginThrottle()
 
 
 def login_required(view):
@@ -36,7 +40,18 @@ def _safe_next(target):
 
 @bp.route("/login", methods=("GET", "POST"))
 def login():
+    caller = request.remote_addr or "unknown"
+
     if request.method == "POST":
+        blocked_for = throttle.seconds_blocked(caller)
+        if blocked_for:
+            flash(
+                f"Too many failed sign-in attempts. Try again in "
+                f"{max(1, blocked_for // 60)} minute(s).",
+                "error",
+            )
+            return render_template("admin/login.html"), 429
+
         password_hash = current_app.config["ADMIN_PASSWORD_HASH"]
         if not password_hash:
             flash(
@@ -45,6 +60,7 @@ def login():
                 "error",
             )
         elif check_password_hash(password_hash, request.form.get("password", "")):
+            throttle.reset(caller)
             # Clear on sign-in to avoid session fixation, but a language
             # choice is a harmless UI preference — keep it.
             language = session.get("lang")
@@ -54,6 +70,7 @@ def login():
                 session["lang"] = language
             return redirect(_safe_next(request.args.get("next")))
         else:
+            throttle.record_failure(caller)
             flash("Incorrect password.", "error")
     return render_template("admin/login.html")
 

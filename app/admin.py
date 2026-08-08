@@ -6,6 +6,7 @@ from datetime import date
 from flask import (
     Blueprint,
     abort,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -19,6 +20,7 @@ from openpyxl.utils import get_column_letter
 
 from .auth import login_required
 from .db import get_db, write_transaction
+from .timefmt import to_local
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -428,6 +430,16 @@ def delete_claim(claim_id):
 # --------------------------------------------------------------------------
 
 
+def _claimed_at(stored):
+    """Camp local time for the spreadsheet.
+
+    Excel cells carry no timezone, so the offset is dropped after converting
+    rather than handing over raw UTC that reads hours early.
+    """
+    moment = to_local(stored, current_app.extensions["display_zone"])
+    return moment.replace(tzinfo=None) if moment else stored
+
+
 def _autofit(sheet, widths):
     for index, width in enumerate(widths, start=1):
         sheet.column_dimensions[get_column_letter(index)].width = width
@@ -478,7 +490,7 @@ def export_xlsx():
                 claim["quantity"],
                 claim["note"] or "",
                 claim["general_note"] or "",
-                claim["created_at"],
+                _claimed_at(claim["created_at"]),
             ]
         )
 
@@ -499,6 +511,10 @@ def export_xlsx():
         )
     for row in summary.iter_rows(min_row=2, min_col=8, max_col=8):
         row[0].number_format = "0%"
+
+    claimed_at_col = 10
+    for row in sheet.iter_rows(min_row=2, min_col=claimed_at_col, max_col=claimed_at_col):
+        row[0].number_format = "yyyy-mm-dd hh:mm"
 
     stream = io.BytesIO()
     book.save(stream)

@@ -71,7 +71,7 @@
                     <span class="text-muted">—</span>
                   {% endif %}
                 </td>
-                <td class="text-muted text-xs nowrap">{{ claim.created_at }}</td>
+                <td class="text-muted text-xs nowrap">{{ claim.created_at | localtime }}</td>
                 <td class="num">
                   <form method="post" action="{{ url_for('admin.delete_claim', claim_id=claim.id) }}"
                         onsubmit="return confirm('Cancel {{ claim.claimant_name }}’s claim of {{ claim.quantity }} {{ item.unit }}?');">
