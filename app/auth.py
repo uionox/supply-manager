@@ -45,8 +45,13 @@ def login():
                 "error",
             )
         elif check_password_hash(password_hash, request.form.get("password", "")):
+            # Clear on sign-in to avoid session fixation, but a language
+            # choice is a harmless UI preference — keep it.
+            language = session.get("lang")
             session.clear()
             session["is_admin"] = True
+            if language:
+                session["lang"] = language
             return redirect(_safe_next(request.args.get("next")))
         else:
             flash("Incorrect password.", "error")
@@ -55,6 +60,9 @@ def login():
 
 @bp.post("/logout")
 def logout():
+    language = session.get("lang")
     session.clear()
+    if language:
+        session["lang"] = language
     flash("Signed out.", "success")
     return redirect(url_for("public.index"))

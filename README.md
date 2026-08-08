@@ -63,6 +63,23 @@ The public page is a single centred column built for phones. The admin side
 is the familiar sidebar shell, which collapses to a drawer plus a bottom
 nav bar under 768px.
 
+## Languages
+
+The public pages ship in English and Arabic, toggled from the header and
+remembered in the session. Translations live in
+[app/i18n.py](app/i18n.py) as a plain dict keyed on the English string —
+no Flask-Babel, no `.mo` compilation step on the server. Arabic switches
+the page to `dir="rtl"` and to the Noto Sans Arabic face.
+
+Only the site's own wording is translated. Category names, item names,
+descriptions and units are content the organisers type in, so they appear
+exactly as entered in both languages. **The admin area is English-only**
+and stays left-to-right whatever the visitor picked.
+
+To add a string: wrap it in `t("…")` in the template or view, then add the
+same English text as a key under `TRANSLATIONS["ar"]`. Anything missing a
+translation falls back to English rather than breaking.
+
 ## How claiming works
 
 Claiming is two steps, so somebody bringing eight things types their details
@@ -83,8 +100,10 @@ claims confirmed together. The public page shows the item note, falling back
 to the drop-off note when an item has none, so a claim always shows something
 useful. Admins see both, and the Excel export gives them separate columns.
 
-Name and phone are remembered in the session afterwards, so a return visit
-arrives pre-filled.
+No phone number is collected — the camp knows everyone taking part. The name
+box suggests names already used on the site (a plain `<datalist>`, still free
+text) so the same person doesn't end up recorded three different ways, and
+the name is remembered in the session so a return visit arrives pre-filled.
 
 The list lives in a cookie, so its size is checked on every change
 (`SESSION_LIST_BUDGET` in [app/public.py](app/public.py)) — browsers drop

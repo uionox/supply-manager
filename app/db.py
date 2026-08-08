@@ -61,6 +61,42 @@ ADDED_COLUMNS = [
 ]
 
 
+def _drop_phone_number(db):
+    """Phone numbers are no longer collected, so remove the column.
+
+    SQLite only gained ALTER TABLE ... DROP COLUMN in 3.35, so rebuild the
+    table instead — that works whatever version the server ships.
+    """
+    columns = {row["name"] for row in db.execute("PRAGMA table_info(claims)")}
+    if "phone_number" not in columns:
+        return
+
+    db.executescript(
+        """
+        PRAGMA foreign_keys = off;
+        BEGIN;
+        CREATE TABLE claims_rebuilt (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_id       INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+            claimant_name TEXT    NOT NULL,
+            quantity      INTEGER NOT NULL CHECK (quantity > 0),
+            note          TEXT,
+            general_note  TEXT,
+            created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT INTO claims_rebuilt
+            (id, item_id, claimant_name, quantity, note, general_note, created_at)
+            SELECT id, item_id, claimant_name, quantity, note, general_note, created_at
+            FROM claims;
+        DROP TABLE claims;
+        ALTER TABLE claims_rebuilt RENAME TO claims;
+        CREATE INDEX IF NOT EXISTS idx_claims_item ON claims (item_id);
+        COMMIT;
+        PRAGMA foreign_keys = on;
+        """
+    )
+
+
 def ensure_schema():
     """Create missing tables and columns. Safe to call on every boot."""
     db = get_db()
@@ -71,6 +107,10 @@ def ensure_schema():
         existing = {row["name"] for row in db.execute(f"PRAGMA table_info({table})")}
         if column not in existing:
             db.execute(statement)
+
+    # Runs after the column additions above, so the rebuild can copy
+    # general_note across on a database old enough to lack both.
+    _drop_phone_number(db)
 
 
 def init_app(app):

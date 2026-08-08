@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% from "partials/_icons.html" import icon %}
 
+{# The admin area is English-only, so it stays left-to-right whatever the
+   visitor picked on the public side. #}
+{% block html_lang %}en{% endblock %}
+{% block html_dir %}ltr{% endblock %}
+
 {% block body_class %}app{% endblock %}
 
 {% block body %}

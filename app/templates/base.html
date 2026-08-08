@@ -1,14 +1,19 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="{% block html_lang %}{{ lang }}{% endblock %}"
+      dir="{% block html_dir %}{{ 'rtl' if is_rtl else 'ltr' }}{% endblock %}"
+      data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#ffffff">
   <title>{% block title %}{{ config.SITE_TITLE }}{% endblock %}</title>
+  {#- Marks JS as available so progressive-enhancement-only controls (the
+      search box) can be hidden up front rather than flashing in. -#}
+  <script>document.documentElement.classList.add('js');</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" href="data:,">
 </head>

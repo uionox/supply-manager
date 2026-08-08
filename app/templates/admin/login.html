@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% from "partials/_icons.html" import icon %}
 {% block title %}Sign in · {{ config.SITE_TITLE }}{% endblock %}
+{# The admin area is English-only, so it stays left-to-right whatever the
+   visitor picked on the public side. #}
+{% block html_lang %}en{% endblock %}
+{% block html_dir %}ltr{% endblock %}
 
 {% block body %}
 <div class="auth-wrap">

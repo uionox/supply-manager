@@ -41,7 +41,7 @@
   <div class="card">
     <div class="card-hd">
       <span class="card-hd-title">Who's bringing what</span>
-      <span class="badge b-gray">Phone numbers are admin-only</span>
+      <span class="badge b-gray">{{ claims | length }}</span>
     </div>
 
     {% if claims %}
@@ -49,7 +49,7 @@
         <table>
           <thead>
             <tr>
-              <th>Claimant</th><th>Phone</th><th class="num">Quantity</th>
+              <th>Claimant</th><th class="num">Quantity</th>
               <th>Notes</th><th>When</th><th></th>
             </tr>
           </thead>
@@ -57,12 +57,6 @@
             {% for claim in claims %}
               <tr>
                 <td class="fw-600">{{ claim.claimant_name }}</td>
-                <td>
-                  <a class="flex items-center gap-1 text-sm" style="color: var(--accent);"
-                     href="tel:{{ claim.phone_number | replace(' ', '') }}">
-                    {{ claim.phone_number }}
-                  </a>
-                </td>
                 <td class="num mono">{{ claim.quantity }} <span class="text-muted text-xs">{{ item.unit }}</span></td>
                 <td class="text-sm">
                   {% if claim.note %}

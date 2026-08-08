@@ -8,7 +8,6 @@ times.
 """
 
 import json
-import re
 
 from flask import (
     Blueprint,
@@ -21,10 +20,10 @@ from flask import (
 )
 
 from .db import get_db, write_transaction
+from .i18n import set_language, translate as t
 
 bp = Blueprint("public", __name__)
 
-PHONE_ALLOWED = re.compile(r"^[0-9+()\-\s]{7,25}$")
 MAX_NAME_LEN = 80
 MAX_ITEM_NOTE_LEN = 140
 MAX_GENERAL_NOTE_LEN = 300
@@ -232,7 +231,7 @@ def list_set(item_id):
     entries = get_pending()
 
     if item is None:
-        flash("That item is no longer listed.", "error")
+        flash(t("That item is no longer listed."), "error")
         save_pending([e for e in entries if e["id"] != item_id])
         return redirect(url_for("public.index"))
 
@@ -241,22 +240,26 @@ def list_set(item_id):
 
     if request.form.get("remove") or raw in ("", "0"):
         save_pending([e for e in entries if e["id"] != item_id])
-        flash(f"Removed {item['name']} from your list.", "success")
+        flash(t("Removed {name} from your list.", name=item["name"]), "success")
         return _back()
 
     if not raw.isdigit() or int(raw) < 1:
-        flash("Quantity must be a whole number of at least 1.", "error")
+        flash(t("Quantity must be a whole number of at least 1."), "error")
         return _back(item_id)
 
     quantity = int(raw)
     if item["remaining"] <= 0:
-        flash(f"{item['name']} has just been fully claimed.", "error")
+        flash(t("{name} has just been fully claimed.", name=item["name"]), "error")
         save_pending([e for e in entries if e["id"] != item_id])
         return _back()
     if quantity > item["remaining"]:
         flash(
-            f"Only {item['remaining']} {item['unit']} of {item['name']} are "
-            f"still needed.",
+            t(
+                "Only {n} {unit} of {name} are still needed.",
+                n=item["remaining"],
+                unit=item["unit"],
+                name=item["name"],
+            ),
             "error",
         )
         return _back(item_id)
@@ -266,18 +269,20 @@ def list_set(item_id):
         # Update in place so editing a note doesn't reshuffle the list.
         existing["quantity"] = quantity
         existing["note"] = note
-        message = f"{item['name']} updated."
+        message = t("{name} updated.", name=item["name"])
     else:
         if len(entries) >= MAX_LIST_ITEMS:
-            flash("Your list is full — please confirm what's on it first.", "error")
+            flash(t("Your list is full — please confirm what's on it first."), "error")
             return _back(item_id)
         entries.append({"id": item_id, "quantity": quantity, "note": note})
-        message = f"{item['name']} added to your list."
+        message = t("{name} added to your list.", name=item["name"])
 
     if not fits_in_session(entries):
         flash(
-            "That's more than your list can hold — please confirm what's on it "
-            "first, or shorten a note.",
+            t(
+                "That's more than your list can hold — please confirm what's on "
+                "it first, or shorten a note."
+            ),
             "error",
         )
         return _back(item_id)
@@ -290,8 +295,16 @@ def list_set(item_id):
 @bp.post("/list/clear")
 def list_clear():
     save_pending([])
-    flash("Your list has been emptied.", "success")
+    flash(t("Your list has been emptied."), "success")
     return redirect(url_for("public.index"))
+
+
+@bp.post("/lang/<code>")
+def switch_language(code):
+    set_language(code)
+    target = request.form.get("next", "")
+    safe = target.startswith("/") and not target.startswith("//")
+    return redirect(target if safe else url_for("public.index"))
 
 
 # --------------------------------------------------------------------------
@@ -299,17 +312,32 @@ def list_clear():
 # --------------------------------------------------------------------------
 
 
+def known_names():
+    """Names already used, to suggest in the name box.
+
+    Keeps spelling consistent between visits without needing accounts — the
+    field stays free text, this only offers what's been typed before.
+    """
+    return [
+        row["claimant_name"]
+        for row in get_db().execute(
+            """SELECT claimant_name, MAX(created_at) AS latest
+               FROM claims
+               GROUP BY claimant_name COLLATE NOCASE
+               ORDER BY latest DESC
+               LIMIT 200"""
+        ).fetchall()
+    ]
+
+
 def _validate_contact(form):
     """Return an error message, or None if the details look usable."""
     if not form["claimant_name"]:
-        return "Please enter your name."
+        return t("Please enter your name.")
     if len(form["claimant_name"]) > MAX_NAME_LEN:
-        return "That name is too long."
-    digits = sum(ch.isdigit() for ch in form["phone_number"])
-    if not PHONE_ALLOWED.match(form["phone_number"]) or digits < 7:
-        return "Please enter a phone number we can reach you on."
+        return t("That name is too long.")
     if len(form["general_note"]) > MAX_GENERAL_NOTE_LEN:
-        return f"Please keep the note under {MAX_GENERAL_NOTE_LEN} characters."
+        return t("Please keep the note under {n} characters.", n=MAX_GENERAL_NOTE_LEN)
     return None
 
 
@@ -317,16 +345,16 @@ def _validate_contact(form):
 def confirm():
     details = pending_details()
     if not details:
-        flash("Your list is empty — pick something you can bring.", "error")
+        flash(t("Your list is empty — pick something you can bring."), "error")
         return redirect(url_for("public.index"))
 
     remembered = session.get(CONTACT_KEY) or {}
     return render_template(
         "confirm.html",
         details=details,
+        names=known_names(),
         form={
             "claimant_name": remembered.get("name", ""),
-            "phone_number": remembered.get("phone", ""),
             "general_note": "",
         },
         error=None,
@@ -337,18 +365,26 @@ def confirm():
 def submit_confirm():
     details = pending_details()
     if not details:
-        flash("Your list is empty — pick something you can bring.", "error")
+        flash(t("Your list is empty — pick something you can bring."), "error")
         return redirect(url_for("public.index"))
 
     form = {
         "claimant_name": request.form.get("claimant_name", "").strip(),
-        "phone_number": request.form.get("phone_number", "").strip(),
         "general_note": request.form.get("general_note", "").strip(),
     }
 
     error = _validate_contact(form)
     if error:
-        return render_template("confirm.html", details=details, form=form, error=error), 400
+        return (
+            render_template(
+                "confirm.html",
+                details=details,
+                names=known_names(),
+                form=form,
+                error=error,
+            ),
+            400,
+        )
 
     placed, short = [], []
     with write_transaction() as db:
@@ -363,12 +399,11 @@ def submit_confirm():
                 continue
             db.execute(
                 """INSERT INTO claims
-                   (item_id, claimant_name, phone_number, quantity, note, general_note)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                   (item_id, claimant_name, quantity, note, general_note)
+                   VALUES (?, ?, ?, ?, ?)""",
                 (
                     entry["id"],
                     form["claimant_name"],
-                    form["phone_number"],
                     entry["quantity"],
                     entry["note"] or None,
                     form["general_note"] or None,
@@ -376,11 +411,8 @@ def submit_confirm():
             )
             placed.append(entry)
 
-    # Remember the details so a return visit doesn't retype them.
-    session[CONTACT_KEY] = {
-        "name": form["claimant_name"],
-        "phone": form["phone_number"],
-    }
+    # Remember the name so a return visit doesn't retype it.
+    session[CONTACT_KEY] = {"name": form["claimant_name"]}
     # Anything that no longer fits stays on the list so it can be adjusted —
     # unless nothing is left at all, in which case keeping it is pointless.
     save_pending(
@@ -393,23 +425,36 @@ def submit_confirm():
 
     if placed:
         flash(
-            f"Thank you, {form['claimant_name']}! "
-            f"{len(placed)} item{'s' if len(placed) != 1 else ''} confirmed.",
+            t("Thank you, {name}! 1 item confirmed.", name=form["claimant_name"])
+            if len(placed) == 1
+            else t(
+                "Thank you, {name}! {n} items confirmed.",
+                name=form["claimant_name"],
+                n=len(placed),
+            ),
             "success",
         )
     if short:
         for entry in short:
             if entry["remaining"] > 0:
                 flash(
-                    f"{entry['name']}: only {entry['remaining']} {entry['unit']} "
-                    f"left, so your {entry['quantity']} couldn't be recorded. "
-                    f"Adjust it below.",
+                    t(
+                        "{name}: only {n} {unit} left, so your {q} couldn't be "
+                        "recorded. Adjust it below.",
+                        name=entry["name"],
+                        n=entry["remaining"],
+                        unit=entry["unit"],
+                        q=entry["quantity"],
+                    ),
                     "error",
                 )
             else:
                 flash(
-                    f"{entry['name']} was fully claimed by someone else before "
-                    f"you confirmed.",
+                    t(
+                        "{name} was fully claimed by someone else before you "
+                        "confirmed.",
+                        name=entry["name"],
+                    ),
                     "error",
                 )
         return redirect(url_for("public.confirm"))

@@ -279,7 +279,23 @@ textarea.form-control { resize: vertical; min-height: 70px; }
 
 /* ── PUBLIC: category + item cards ── */
 .cat-block { margin-bottom: 26px; }
-.cat-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.cat-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  cursor: pointer; user-select: none; list-style: none;
+  padding: 4px 0; border-radius: var(--radius-sm);
+}
+.cat-head::-webkit-details-marker { display: none; }
+.cat-head:hover .cat-name { color: var(--text); }
+.cat-caret { display: flex; color: var(--text-3); transition: transform .15s; }
+.cat-caret svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2;
+  fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cat-block:not([open]) .cat-caret { transform: rotate(-90deg); }
+[dir="rtl"] .cat-block:not([open]) .cat-caret { transform: rotate(90deg); }
+.cat-count {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px; color: var(--text-3);
+  padding: 1px 6px; border: 1px solid var(--border); border-radius: 99px;
+}
 .cat-name { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
   color: var(--text-3); }
 .cat-rule { flex: 1; height: 1px; background: var(--border); }
@@ -442,3 +458,48 @@ textarea.form-control { resize: vertical; min-height: 70px; }
   .container { padding: 0 14px; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── LANGUAGE TOGGLE ── */
+.site-top-actions { display: flex; align-items: center; gap: 6px; }
+.site-top-actions form { margin: 0; }
+.lang-btn { font-weight: 600; min-width: 62px; justify-content: center; }
+
+/* ── LIVE SEARCH ── */
+/* JS-only, so it stays hidden unless scripting is available. */
+.searchbar { display: none; }
+.js .searchbar {
+  display: flex; align-items: center; gap: 6px; position: relative;
+  margin-bottom: 20px;
+}
+.searchbar .form-control { padding-inline-start: 34px; }
+.searchbar-icon {
+  position: absolute; inset-inline-start: 11px; display: flex;
+  color: var(--text-3); pointer-events: none;
+}
+.searchbar-icon svg { width: 15px; height: 15px; stroke: currentColor;
+  stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.searchbar-clear { font-size: 18px; line-height: 1; color: var(--text-3); }
+.no-results { margin-bottom: 20px; }
+.item[hidden], .cat-block[hidden] { display: none; }
+
+/* ── RIGHT-TO-LEFT (Arabic) ── */
+/* Flex and grid mirror themselves from dir="rtl"; these are the few places
+   that hard-code a side. The admin area is pinned to ltr, so nothing there
+   needs mirroring. */
+[dir="rtl"] body,
+[dir="rtl"] button,
+[dir="rtl"] input,
+[dir="rtl"] select,
+[dir="rtl"] textarea {
+  font-family: 'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+}
+[dir="rtl"] .overview-side { text-align: left; }
+[dir="rtl"] .item-left { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .row-actions { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .flash { border-left: none; border-right: 3px solid; }
+/* Numbers and units read better left-to-right even in Arabic copy. */
+[dir="rtl"] .mono,
+[dir="rtl"] .item-nums,
+[dir="rtl"] .pendbar-count { direction: ltr; unicode-bidi: isolate; }
+
+.ltr-nums { direction: ltr; unicode-bidi: isolate; display: inline-block; }

@@ -20,7 +20,6 @@ CREATE TABLE IF NOT EXISTS claims (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id       INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
     claimant_name TEXT    NOT NULL,
-    phone_number  TEXT    NOT NULL,
     quantity      INTEGER NOT NULL CHECK (quantity > 0),
     -- note: about this item specifically. general_note: about the whole
     -- drop-off, repeated on every claim confirmed together.

@@ -10,12 +10,21 @@
       <span class="brand-mark">{{ icon('box') }}</span>
       <span class="brand-lines">
         <span class="brand-text">{{ config.SITE_TITLE }}</span>
-        <span class="brand-sub">Community supply list</span>
+        <span class="brand-sub">{{ t('Community supply list') }}</span>
       </span>
     </a>
-    <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.dashboard') }}">
-      {{ icon('lock') }} Admin
-    </a>
+    <div class="site-top-actions">
+      <form method="post" action="{{ url_for('public.switch_language', code=other_lang) }}">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button type="submit" class="btn btn-ghost btn-sm lang-btn"
+                title="{{ t('Switch to Arabic') if other_lang == 'ar' else t('Switch to English') }}">
+          {{ LANGUAGES[other_lang] }}
+        </button>
+      </form>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.dashboard') }}">
+        {{ icon('lock') }} {{ t('Admin') }}
+      </a>
+    </div>
   </div>
 </header>
 
@@ -25,8 +34,8 @@
 </main>
 
 <footer class="container site-foot">
-  <span>Thank you for helping out.</span>
-  <a href="{{ url_for('admin.dashboard') }}">Organiser sign in</a>
+  <span>{{ t('Thank you for helping out.') }}</span>
+  <a href="{{ url_for('admin.dashboard') }}">{{ t('Organiser sign in') }}</a>
 </footer>
 
 {% include "partials/_pendingbar.html" %}

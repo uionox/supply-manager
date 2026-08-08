@@ -4,7 +4,7 @@ import os
 
 from flask import Flask
 
-from . import admin, auth, cli, db, public
+from . import admin, auth, cli, db, i18n, public
 
 
 def _load_dotenv(path):
@@ -44,6 +44,7 @@ def create_app(test_config=None):
 
     db.init_app(app)
     cli.init_app(app)
+    i18n.init_app(app)
     app.register_blueprint(public.bp)
     app.register_blueprint(auth.bp)
     app.register_blueprint(admin.bp)
