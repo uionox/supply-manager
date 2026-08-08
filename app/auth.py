@@ -52,7 +52,7 @@ def login():
             )
             return render_template("admin/login.html"), 429
 
-        password_hash = "adminpanel"
+        password_hash = current_app.config["ADMIN_PASSWORD_HASH"]
         if not password_hash:
             flash(
                 "No admin password is configured on this server. "
