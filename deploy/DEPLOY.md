@@ -1,7 +1,10 @@
 # Deploying the Camp Supply Tracker
 
-Written for a small Debian/Ubuntu VPS (0.5 GB RAM is enough). Everything
-here assumes the app lives at `/srv/supply-manager`.
+Written for a Debian/Ubuntu VPS. The app itself is light — Flask, stdlib
+SQLite, no build step — so it runs comfortably on a 0.5 GB box, but these
+steps target the current deployment target: **8 GB RAM, 4 vCPU**, which
+is why the systemd unit below runs 4 Gunicorn workers instead of 2.
+Everything here assumes the app lives at `/srv/supply-manager`.
 
 ## 1. System packages
 
@@ -67,6 +70,16 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now supply-manager
 sudo systemctl status supply-manager
 ```
+
+The unit runs 4 Gunicorn workers, one per vCPU. Gunicorn's own rule of
+thumb is `(2 × cores) + 1`, but this app's actual traffic — dozens of
+visitors, one admin — never gets close to stressing even 2, and SQLite
+serializes every write regardless of worker count (see
+`write_transaction()` in [app/db.py](../app/db.py)). More workers mainly
+buys headroom for concurrent page reads during a burst, not raw
+throughput, so there's no need to chase the full formula here. Edit
+`--workers` in the `.service` file and `systemctl daemon-reload` +
+`restart` if you ever want to change it.
 
 ## 7. Put Caddy in front
 

@@ -4,8 +4,10 @@ A small web app for a Red Cross camp. An admin lists what the camp needs;
 anyone can open the site, see what's still missing, and claim a quantity
 they'll bring — name and an optional note. No accounts, no signup.
 
-Built to run on a 0.5 GB VPS: Flask + SQLite (stdlib `sqlite3`, no ORM),
-server-rendered Jinja2, vanilla CSS/JS. No Node, no build step, no Docker.
+Built to be light — Flask + SQLite (stdlib `sqlite3`, no ORM), server-rendered
+Jinja2, vanilla CSS/JS, no Node, no build step, no Docker — so it runs
+comfortably on a 0.5 GB VPS and has plenty of headroom on anything bigger.
+See [deploy/DEPLOY.md](deploy/DEPLOY.md) for the current deployment target.
 
 ## Running locally
 
