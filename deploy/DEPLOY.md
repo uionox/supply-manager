@@ -113,13 +113,7 @@ sudo journalctl -u supply-manager -n 30 --no-pager
 ```
 
 Then sign in at `/admin`, add a category and an item, and claim it from a
-phone. Worth running the test suite on the server once too:
-
-```bash
-cd /srv/supply-manager && sudo -u supply .venv/bin/python -m pytest
-```
-
-That needs the dev requirements: `.venv/bin/pip install -r requirements-dev.txt`.
+phone.
 
 ## Shutting the site down for good
 

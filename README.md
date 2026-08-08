@@ -2,7 +2,7 @@
 
 A small web app for a Red Cross camp. An admin lists what the camp needs;
 anyone can open the site, see what's still missing, and claim a quantity
-they'll bring — name, phone number, optional note. No accounts, no signup.
+they'll bring — name and an optional note. No accounts, no signup.
 
 Built to run on a 0.5 GB VPS: Flask + SQLite (stdlib `sqlite3`, no ORM),
 server-rendered Jinja2, vanilla CSS/JS. No Node, no build step, no Docker.
@@ -38,21 +38,6 @@ To load a few sample categories and items:
 .venv/Scripts/flask --app wsgi seed-demo
 ```
 
-## Tests
-
-```bash
-.venv/Scripts/pip install -r requirements-dev.txt
-```
-
-```bash
-.venv/Scripts/python -m pytest
-```
-
-Each test gets its own throwaway SQLite file, so they can run in any order
-and leave nothing behind. Coverage is aimed at the things that would
-actually hurt: the claim race, the schema migrations, access control, and
-the two note levels.
-
 ## Security notes
 
 - **The session key is never a shared default.** `SECRET_KEY` from the
@@ -82,7 +67,6 @@ the two note levels.
 | `app/security.py` | Session-key resolution and login throttling |
 | `app/i18n.py` | English/Arabic strings |
 | `app/timefmt.py` | UTC storage shown in camp time |
-| `tests/` | pytest suite |
 | `app/static/style.css` | The whole design system — tokens, components, responsive rules |
 | `app/templates/partials/_icons.html` | Inline SVG icon macro |
 | `schema.sql` | Table definitions, re-runnable |
