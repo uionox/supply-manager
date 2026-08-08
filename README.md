@@ -5,9 +5,11 @@ anyone can open the site, see what's still missing, and claim a quantity
 they'll bring — name and an optional note. No accounts, no signup.
 
 Built to be light — Flask + SQLite (stdlib `sqlite3`, no ORM), server-rendered
-Jinja2, vanilla CSS/JS, no Node, no build step, no Docker — so it runs
+Jinja2, vanilla CSS/JS, no Node, no frontend build step — so it runs
 comfortably on a 0.5 GB VPS and has plenty of headroom on anything bigger.
-See [deploy/DEPLOY.md](deploy/DEPLOY.md) for the current deployment target.
+Runs either directly under systemd or in Docker; see
+[deploy/DEPLOY.md](deploy/DEPLOY.md) for the current bare-metal target, or
+[Docker](#docker) below.
 
 ## Running locally
 
@@ -38,6 +40,45 @@ To load a few sample categories and items:
 
 ```bash
 .venv/Scripts/flask --app wsgi seed-demo
+```
+
+## Docker
+
+```bash
+cp .env.example .env
+```
+
+Generate a password hash and paste it into `.env` as `ADMIN_PASSWORD_HASH`:
+
+```bash
+.venv/Scripts/flask --app wsgi hash-password "letmein"
+```
+
+```bash
+docker compose up --build
+```
+
+The app is then at `http://localhost:8000`. The Gunicorn worker count in
+[Dockerfile](Dockerfile) matches [deploy/supply-manager.service](deploy/supply-manager.service)
+(4, one per vCPU on the current VPS) — see [deploy/DEPLOY.md](deploy/DEPLOY.md)
+for the reasoning.
+
+`docker-compose.yml` mounts a named volume over `instance/`, so the SQLite
+database and the generated session key both survive `docker compose up
+--build`. Caddy still runs on the host per DEPLOY.md and reverse-proxies to
+`127.0.0.1:8000` — the container publishes only to localhost, same as the
+systemd-run Gunicorn process it replaces. Set `TRUST_PROXY=1` in `.env` so
+login-throttling sees the real visitor IP through Caddy rather than the
+Docker network's.
+
+Without Compose:
+
+```bash
+docker build -t supply-manager .
+```
+
+```bash
+docker run --env-file .env -p 127.0.0.1:8000:8000 -v supply_instance:/app/instance supply-manager
 ```
 
 ## Security notes
@@ -73,6 +114,7 @@ To load a few sample categories and items:
 | `app/templates/partials/_icons.html` | Inline SVG icon macro |
 | `schema.sql` | Table definitions, re-runnable |
 | `deploy/` | systemd unit, Caddyfile, and step-by-step server setup |
+| `Dockerfile`, `docker-compose.yml` | Container build, alternative to systemd |
 
 ## Design
 

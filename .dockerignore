@@ -1,0 +1,28 @@
+# Never let secrets or live data end up baked into an image layer.
+.env
+instance/
+
+# Version control and editor/tooling cruft — irrelevant inside the image.
+.git
+.gitignore
+.gitattributes
+.claude/
+.vscode/
+.idea/
+
+# Local dev environments — the image installs its own dependencies.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Docs and bare-metal deploy files aren't needed at runtime.
+docs/
+deploy/
+*.md
+
+# The image is built from source; a stray local build artifact shouldn't
+# ride along.
+Dockerfile
+.dockerignore
+docker-compose.yml

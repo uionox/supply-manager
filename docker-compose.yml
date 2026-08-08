@@ -1,0 +1,23 @@
+# Optional convenience wrapper around `docker build`/`docker run` — handles
+# the volume and .env wiring so they don't have to be typed out by hand.
+# Caddy still runs on the host per deploy/DEPLOY.md and reverse-proxies to
+# 127.0.0.1:8000, same as it did for the systemd-run Gunicorn process this
+# replaces.
+
+services:
+  app:
+    build: .
+    container_name: supply-manager
+    restart: unless-stopped
+    # Bound to localhost only — Caddy in front handles the public HTTPS side.
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Named volume, not a bind mount, so the SQLite file and the
+      # generated session secret survive `docker compose up --build`.
+      - supply_instance:/app/instance
+
+volumes:
+  supply_instance:
