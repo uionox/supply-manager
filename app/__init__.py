@@ -40,7 +40,7 @@ def create_app(test_config=None):
         SECRET_KEY=resolve_secret_key(app.instance_path),
         DATABASE=os.environ.get("DATABASE_PATH")
         or os.path.join(app.instance_path, "supply.db"),
-        ADMIN_PASSWORD_HASH=os.environ.get("ADMIN_PASSWORD_HASH", ""),
+        ADMIN_PASSWORD=os.environ.get("ADMIN_PASSWORD", ""),
         SITE_TITLE=os.environ.get("SITE_TITLE", "Camp Supply Tracker"),
         DISPLAY_TIMEZONE=os.environ.get("DISPLAY_TIMEZONE", "Asia/Beirut"),
         SESSION_COOKIE_HTTPONLY=True,

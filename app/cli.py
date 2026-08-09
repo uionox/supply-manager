@@ -3,7 +3,6 @@
 import click
 from flask import current_app
 from flask.cli import with_appcontext
-from werkzeug.security import generate_password_hash
 
 from .db import ensure_schema, get_db
 
@@ -14,13 +13,6 @@ def init_db_command():
     """Create the database file and tables if they don't exist yet."""
     ensure_schema()
     click.echo(f"Database ready at {current_app.config['DATABASE']}")
-
-
-@click.command("hash-password")
-@click.argument("password")
-def hash_password_command(password):
-    """Print an ADMIN_PASSWORD_HASH value for the given password."""
-    click.echo(generate_password_hash(password))
 
 
 @click.command("seed-demo")
@@ -63,5 +55,4 @@ def seed_demo_command():
 
 def init_app(app):
     app.cli.add_command(init_db_command)
-    app.cli.add_command(hash_password_command)
     app.cli.add_command(seed_demo_command)

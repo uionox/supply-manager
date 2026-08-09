@@ -36,13 +36,10 @@ sudo -u supply cp /srv/supply-manager/.env.example /srv/supply-manager/.env
 sudo chmod 600 /srv/supply-manager/.env
 ```
 
-The only required value is the admin password hash:
-
-```bash
-cd /srv/supply-manager && sudo -u supply .venv/bin/flask --app wsgi hash-password "your-admin-password"
-```
-
-Paste the output as `ADMIN_PASSWORD_HASH`. The plain password is never stored.
+The only required value is `ADMIN_PASSWORD` — the sign-in password, in
+plain text, no hashing step. `chmod 600` above keeps it readable only by
+the `supply` user; that's the only protection it has, since anyone who can
+read `.env` can read the password itself.
 
 Check the rest of `.env` before moving on:
 

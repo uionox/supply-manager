@@ -23,10 +23,11 @@ python -m venv .venv
 
 (on Linux/macOS use `.venv/bin/pip`)
 
-Create a `.env` from the example and set an admin password hash:
+Create a `.env` from the example and set `ADMIN_PASSWORD` to whatever you
+want the sign-in password to be — plain text, no hashing step:
 
 ```bash
-.venv/Scripts/flask --app wsgi hash-password "letmein"
+cp .env.example .env
 ```
 
 Then run it:
@@ -48,11 +49,7 @@ To load a few sample categories and items:
 cp .env.example .env
 ```
 
-Generate a password hash and paste it into `.env` as `ADMIN_PASSWORD_HASH`:
-
-```bash
-.venv/Scripts/flask --app wsgi hash-password "letmein"
-```
+Set `ADMIN_PASSWORD` in `.env` to the sign-in password, then:
 
 ```bash
 docker compose up --build
@@ -83,6 +80,12 @@ docker run --env-file .env -p 127.0.0.1:8000:8000 -v supply_instance:/app/instan
 
 ## Security notes
 
+- **`ADMIN_PASSWORD` is plain text, not a hash.** Whoever can read the
+  environment (server access, Coolify's dashboard, etc.) can read the
+  password itself, not just verify against it. Traded off deliberately for
+  this app's size — it avoids `$`-in-the-value problems some PaaS env var
+  UIs have with hash formats. Comparison uses `hmac.compare_digest` so a
+  failed attempt can't be timed to guess it character by character.
 - **The session key is never a shared default.** `SECRET_KEY` from the
   environment wins; with nothing set, a random key is generated once into
   `instance/secret_key`. Setting it to a known placeholder makes the app

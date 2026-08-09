@@ -1,6 +1,7 @@
 """Single shared admin password, kept in a Flask session."""
 
 import functools
+import hmac
 
 from flask import (
     Blueprint,
@@ -12,7 +13,6 @@ from flask import (
     session,
     url_for,
 )
-from werkzeug.security import check_password_hash
 
 from .security import LoginThrottle
 
@@ -52,14 +52,16 @@ def login():
             )
             return render_template("admin/login.html"), 429
 
-        password_hash = "adminpanel"
-        if not password_hash:
+        admin_password = current_app.config["ADMIN_PASSWORD"]
+        if not admin_password:
             flash(
                 "No admin password is configured on this server. "
-                "Set ADMIN_PASSWORD_HASH and restart.",
+                "Set ADMIN_PASSWORD and restart.",
                 "error",
             )
-        elif check_password_hash(password_hash, request.form.get("password", "")):
+        # compare_digest instead of == so a failed check can't be timed to
+        # guess the password one character at a time.
+        elif hmac.compare_digest(admin_password, request.form.get("password", "")):
             throttle.reset(caller)
             # Clear on sign-in to avoid session fixation, but a language
             # choice is a harmless UI preference — keep it.
